@@ -116,9 +116,10 @@ b[2, ] <- (b[2, ] - mean(b[2, ])) * 1.05 + mean(b[2, ])
 # scale longitude and latitude (increase bb by 5% for plot) replace 1.05
 # with 1.xx for an xx% increase in the plot size
 
-basemap <- ggmap(get_map(location = b, source = "stamen", maptype = "toner", crop = TRUE))
+basemap <- ggmap(get_map(location = b, source = "google", crop = TRUE))
 places.box.f <- fortify(places.box, region = "GEOID10")
 places.box.f <- merge(places.box.f, places.box@data, by.x = "id", by.y = "GEOID10")
 
 # Plot the map
-basemap + geom_polygon(data = places.box.f, aes(x = long, y = lat, group = group), alpha = 0.5)
+basemap + geom_polygon(data = places.box.f, aes(x = long, y = lat, group = group), color = grey(0.4), alpha = 0.2) + 
+	theme_nothing()
