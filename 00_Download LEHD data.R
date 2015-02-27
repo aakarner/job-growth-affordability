@@ -57,7 +57,7 @@ for(year in years.to.download) {
 	)
 
 	# Create a variable to store the wac file for each year
-	assign(paste0("wac_", year), read.table(gzfile(tf), header = TRUE, sep = ",", 
+	assign(paste0("wac.", year), read.table(gzfile(tf), header = TRUE, sep = ",", 
 		colClasses = "numeric", stringsAsFactors = FALSE))
 	
 	# Remove the temporary file from the local disk
@@ -76,10 +76,13 @@ download.cache(
 
 xwalk <- read.table(gzfile(tf), header = TRUE, sep = ",", stringsAsFactors = FALSE)
 
+# Remove the temporary file from the local disk
+file.remove(tf)
+
 # Make sure that the files were downloaded correctly
 # and that all blocks are represented in the crosswalk file
 for(year in years.to.download)
-	stopifnot(sum(paste0("wac_", year, "$w_geocode") %in% xwalk$tabblk2010) == dim(paste0("wac_", year))[1])
+	stopifnot(sum(paste0("wac.", year, "$w_geocode") %in% xwalk$tabblk2010) == dim(paste0("wac.", year))[1])
 
 # Each year of the LEHD data for the WAC and the crosswalk file are now imported.
 
