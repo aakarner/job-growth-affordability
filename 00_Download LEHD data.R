@@ -65,6 +65,23 @@ for(year in years.to.download) {
 	
 	# And free up RAM
 	gc()
+	
+	# Data import: residence area characteristics (i.e. job location data)
+	download.cache( 
+		url = paste0("http://lehd.ces.census.gov/data/lodes/LODES7/ca/rac/ca_rac_S000_JT00_", year, ".csv.gz"), 
+		destfile = tf, 
+		mode = 'wb'
+	)
+
+	# Create a variable to store the wac file for each year
+	assign(paste0("rac.", year), read.table(gzfile(tf), header = TRUE, sep = ",", 
+		colClasses = "numeric", stringsAsFactors = FALSE))
+	
+	# Remove the temporary file from the local disk
+	file.remove(tf)
+	
+	# And free up RAM
+	gc()
 }
 	
 # Download the geographic crosswalk file for California
@@ -87,4 +104,4 @@ for(year in years.to.download)
 # Each year of the LEHD data for the WAC and the crosswalk file are now imported.
 
 # Save the output so that it may be reloaded easily. 
-save.image("BayAreaLEHD_WAC.RData")
+save.image("BayAreaLEHD.RData")
