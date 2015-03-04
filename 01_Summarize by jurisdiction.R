@@ -242,8 +242,6 @@ for(i in 1:nrow(plot.categories)) {
 	ggsave(paste0(plot.categories[, 2][i], ".png"), width = 5.5, height = 4)
 }
 
-i <- 1
-
 # ... and this one for absolute growth numbers
 for(i in 1:nrow(plot.categories)) {
 	basemap + geom_polygon(data = places.box.f, aes(x = long, y = lat, group = group, 
@@ -261,7 +259,6 @@ for(i in 1:nrow(plot.categories)) {
 
 	ggsave(paste0(plot.categories[, 2][i], "_absolute.png"), width = 5.5, height = 4)
 }
-
 
 
 ## Area jobs / employed residents ratios ---------------------------------------
