@@ -279,6 +279,10 @@ for(year in years.to.download) {
 		CE02, CE03, CNS01, CNS02, CNS03, CNS04, CNS05, CNS06, CNS07, CNS08, CNS09, CNS10, CNS11, CNS12, CNS13, CNS14, 
 		CNS15, CNS16, CNS17, CNS18, CNS19, CNS20, CD01, CD02, CD03, CD04)
 	
+	# Add another column representing low-wage and high-wage professions
+	wac.balance.this <- mutate(wac.balance.this, low_wage_jobs = CNS07 + CNS17 + CNS18, 
+		high_wage_jobs = CNS09 + CNS10 + CNS12 + CNS13)
+	
 	rac.balance.this <- data.frame("place" = balance.places)
 	rac.balance.this <- left_join(rac.balance.this, eval(parse(text = paste0("rac.place.", year))), 
 			by = c("place" = "placename"))
@@ -286,6 +290,9 @@ for(year in years.to.download) {
 	rac.balance.this <- select(rac.balance.this, place, C000, CE01, 
 		CE02, CE03, CNS01, CNS02, CNS03, CNS04, CNS05, CNS06, CNS07, CNS08, CNS09, CNS10, CNS11, CNS12, CNS13, CNS14, 
 		CNS15, CNS16, CNS17, CNS18, CNS19, CNS20, CD01, CD02, CD03, CD04)
+	
+	rac.balance.this <- mutate(rac.balance.this, low_wage_jobs = CNS07 + CNS17 + CNS18, 
+		high_wage_jobs = CNS09 + CNS10 + CNS12 + CNS13)
 	
 	# Ensure the rows and columns match
 	stopifnot(wac.balance.this$place == rac.balance.this$place)
@@ -296,8 +303,8 @@ for(year in years.to.download) {
 	# 1 is perfect balance
 	# 0 is complete imbalance
 	balance.this <- cbind("place" = wac.balance.this[, 1], 
-		1 - abs(wac.balance.this[, 2:29] - rac.balance.this[, 2:29]) / 
-				(wac.balance.this[, 2:29] + rac.balance.this[, 2:29]))
+		1 - abs(wac.balance.this[, 2:31] - rac.balance.this[, 2:31]) / 
+				(wac.balance.this[, 2:31] + rac.balance.this[, 2:31]))
 
 	# Join total workers and jobs back to the balance table
 	balance.this <- left_join(balance.this, wac.balance.this[, c("place", "C000")], by = c("place" = "place"))
@@ -305,8 +312,8 @@ for(year in years.to.download) {
 	balance.this <- left_join(balance.this, rac.balance.this[, c("place", "C000")], by = c("place" = "place"))
 	
 	names(balance.this)[2] <- "C000"
-	names(balance.this)[30] <- "total_jobs"
-	names(balance.this)[31] <- "total_residents"
+	names(balance.this)[32] <- "total_jobs"
+	names(balance.this)[33] <- "total_residents"
 
 	# Add a variable describing whether the jurisdiction is jobs or housing rich
 	balance.this <- mutate(balance.this, jobs_rich = total_jobs > total_residents, year = year)
@@ -315,7 +322,7 @@ for(year in years.to.download) {
 	assign(paste0("balance.", year), balance.this)
 	
 	## Calculate a raw jobs/employed residents ratio
-	ratio.this <- cbind("place" = wac.balance.this[, 1], wac.balance.this[, 2:29] / rac.balance.this[, 2:29])
+	ratio.this <- cbind("place" = wac.balance.this[, 1], wac.balance.this[, 2:31] / rac.balance.this[, 2:31])
 	
 	# Join total workers and jobs back to the ratio table
 	ratio.this <- left_join(ratio.this, wac.balance.this[, c("place", "C000")], by = c("place" = "place"))
@@ -323,8 +330,8 @@ for(year in years.to.download) {
 	ratio.this <- left_join(ratio.this, rac.balance.this[, c("place", "C000")], by = c("place" = "place"))
 	
 	names(ratio.this)[2] <- "C000"
-	names(ratio.this)[30] <- "total_jobs"
-	names(ratio.this)[31] <- "total_residents"
+	names(ratio.this)[32] <- "total_jobs"
+	names(ratio.this)[33] <- "total_residents"
 
 	# Add a variable describing whether the jurisdiction is jobs or housing rich
 	ratio.this <- mutate(ratio.this, jobs_rich = total_jobs > total_residents, year = year)
@@ -354,7 +361,7 @@ for(year in years.to.download) {
 	top.25.this <- filter(balance.this, place %in% places)
 	top.25.this <- select(top.25.this, place, C000, CE01, CE02, CE03, CD01, CD02, CD03, CD04, CNS01, CNS02, CNS03, 
 		CNS04, CNS05, CNS06, CNS07, CNS08, CNS09, CNS10, CNS11, CNS12, CNS13, CNS14, 
-		CNS15, CNS16, CNS17, CNS18, CNS19, CNS20,
+		CNS15, CNS16, CNS17, CNS18, CNS19, CNS20, low_wage_jobs, high_wage_jobs,
 		year, total_jobs, total_residents)
 		
 	# Reorder place factor to descending in total jobs
@@ -369,7 +376,7 @@ for(year in years.to.download) {
 	top.25.ratio.this <- filter(ratio.this, place %in% places)
 	top.25.ratio.this <- select(top.25.ratio.this, place, C000, CE01, CE02, CE03, CD01, CD02, CD03, CD04, CNS01, CNS02, 
 		CNS03, CNS04, CNS05, CNS06, CNS07, CNS08, CNS09, CNS10, CNS11, CNS12, CNS13, CNS14, 
-		CNS15, CNS16, CNS17, CNS18, CNS19, CNS20,
+		CNS15, CNS16, CNS17, CNS18, CNS19, CNS20, low_wage_jobs, high_wage_jobs,
 		year, total_jobs, total_residents)
 	
 	top.25.ratio.this$place <- gsub(" city, CA", "", top.25.ratio.this$place)
@@ -395,6 +402,7 @@ balance.merged <- rbind(
 balance.merged.educ <- filter(balance.merged, variable %in% c("CD01", "CD02", "CD03", "CD04"))
 balance.merged.wage <- filter(balance.merged, variable %in% c("CE01", "CE02", "CE03"))
 balance.merged.naics <- filter(balance.merged, variable %in% c("CNS12", "CNS18"))
+balance.merged.lwhw <- filter(balance.merged, variable %in% c("low_wage_jobs", "high_wage_jobs"))
 
 ratio.merged <- rbind(
 	melt(top.25.ratio.2009, id = c("place", "year", "total_jobs", "total_residents")),
@@ -404,6 +412,7 @@ ratio.merged <- rbind(
 ratio.merged.educ <- filter(ratio.merged, variable %in% c("CD01", "CD02", "CD03", "CD04"))
 ratio.merged.wage <- filter(ratio.merged, variable %in% c("CE01", "CE02", "CE03"))
 ratio.merged.naics <- filter(ratio.merged, variable %in% c("CNS12", "CNS18"))
+ratio.merged.lwhw <- filter(ratio.merged, variable %in% c("low_wage_jobs", "high_wage_jobs"))
 
 # Plot showing change over time for the balance indicator 
 # for the 25 jurisdictions with the greatest numbers of jobs in 2011
@@ -426,8 +435,7 @@ ggsave("Balance_Education.png", width = 13, height = 15, scale = 0.6)
 wage <- ggplot(balance.merged.wage, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
 	# Adjust the aesthetic to correctly plot the line
 	geom_line(aes(group = variable)) + 
-	scale_color_brewer(palette = "Dark2", 
-		labels = c("Low-wage", "Mid-wage", "High-wage")) + 
+	scale_color_brewer(palette = "Dark2", labels = c("Low-wage", "Mid-wage", "High-wage")) + 
 	xlab(NULL) + ylab("symmetric job-employed resident balance (1 = balance, 0 = imbalance)") + 
 	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
 		legend.position = "bottom")
@@ -446,10 +454,23 @@ naics <- ggplot(balance.merged.naics, aes(x = as.factor(year), y = value, color 
 	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
 		legend.position = "bottom")
 
-naics + facet_wrap(~ place) + ggtitle("Job-employed resident balance indicators by NAICS category")
+naics + facet_wrap(~ place) + ggtitle("Job-employed resident balance indicators by NAICS code")
 
 ggsave("Balance_NAICS.png", width = 13, height = 15, scale = 0.6)
 
+
+# Aggregate low/high wage jobs
+lwhw <- ggplot(balance.merged.lwhw, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
+	# Adjust the aesthetic to correctly plot the line
+	geom_line(aes(group = variable)) + 
+	scale_color_brewer(palette = "Dark2", labels = c("Low-wage NAICS codes", "High-wage NAICS codes")) + 
+	xlab(NULL) + ylab("symmetric job-employed resident balance (1 = balance, 0 = imbalance)") + 
+	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
+		legend.position = "bottom")
+
+lwhw + facet_wrap(~ place) + ggtitle("Job-employed resident balance indicators by\nlow-wage and high-wage NAICS codes")
+
+ggsave("Balance_lwhw.png", width = 13, height = 15, scale = 0.6)
 
 
 # Plot showing change over time for the RATIO indicator 
@@ -494,3 +515,16 @@ naics <- ggplot(ratio.merged.naics, aes(x = as.factor(year), y = value, color = 
 naics + facet_wrap(~ place) + ggtitle("Job-employed resident indicators by NAICS code")
 
 ggsave("Ratio_JER_naics.png", width = 13, height = 15, scale = 0.6)
+
+# Aggregate low/high wage jobs
+lwhw <- ggplot(ratio.merged.lwhw, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
+	# Adjust the aesthetic to correctly plot the line
+	geom_line(aes(group = variable)) + 
+	scale_color_brewer(palette = "Dark2", labels = c("Low-wage NAICS codes", "High-wage NAICS codes")) + 
+	xlab(NULL) + ylab("jobs-employed residents ratio") + 
+	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
+		legend.position = "bottom")
+
+lwhw + facet_wrap(~ place) + ggtitle("Job-employed resident indicators by\nlow-wage and high-wage NAICS codes")
+
+ggsave("Ratio_lwhw.png", width = 13, height = 15, scale = 0.6)
