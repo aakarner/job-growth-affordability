@@ -73,12 +73,12 @@ for(year in years.to.download)
 # Naming convention is as follows: wac.year1.year2 where year1 > year 2
 
 # Identify common places across all years
-all.places <- union(union(wac.place.2011$stplcname, wac.place.2010$stplcname), wac.place.2009$stplcname)
+all.places <- union(union(wac.place.2011$placename, wac.place.2010$placename), wac.place.2009$placename)
 
 # Create three new (empty) data frames with only common rows between all years
-wac.place.2009.v2 <- data.frame("stplcname" = all.places)
-wac.place.2010.v2 <- data.frame("stplcname" = all.places)
-wac.place.2011.v2 <- data.frame("stplcname" = all.places)
+wac.place.2009.v2 <- data.frame("placename" = all.places)
+wac.place.2010.v2 <- data.frame("placename" = all.places)
+wac.place.2011.v2 <- data.frame("placename" = all.places)
 
 # Populate these data frames using merge (rows with missing info will just get NA)
 wac.place.2009.v2 <- merge(wac.place.2009.v2, wac.place.2009, all = TRUE)
@@ -86,13 +86,12 @@ wac.place.2010.v2 <- merge(wac.place.2010.v2, wac.place.2010, all = TRUE)
 wac.place.2011.v2 <- merge(wac.place.2011.v2, wac.place.2011, all = TRUE)
 
 # Error checking
-stopifnot(wac.place.2009.v2$stplcname == wac.place.2010.v2$stplcname & 
-		wac.place.2009.v2$ctyname == wac.place.2010.v2$ctyname)
+stopifnot(wac.place.2009.v2$placename == wac.place.2010.v2$placename & 
+		wac.place.2009.v2$placename == wac.place.2010.v2$placename)
 
 # This check fails because...
-stopifnot(wac.place.2011.v2$stplcname == wac.place.2010.v2$stplcname & 
-		wac.place.2011.v2$ctyname == wac.place.2010.v2$ctyname)
-#...Sereno Del Mar, CDP is in the 2009 and 2010 WAC, but not 2011
+stopifnot(wac.place.2011.v2$placename == wac.place.2010.v2$placename & 
+		wac.place.2011.v2$placename == wac.place.2010.v2$placename)
 
 # Take the difference to generate absolute growth numbers
 wac.2011.2010 <- cbind(wac.place.2011.v2[, 4:54] - wac.place.2010.v2[, 4:54], wac.place.2011.v2[, 1:3])
@@ -158,13 +157,7 @@ basemap <- ggmap(get_map(location = b, source = "google", maptype = "satellite",
 places.box.f <- fortify(places.box, region = "GEOID10")
 places.box.f <- merge(places.box.f, places.box@data, by.x = "id", by.y = "GEOID10")
 
-# Plot the map
-basemap + geom_polygon(data = places.box.f, aes(x = long, y = lat, group = group), color = grey(0.4), alpha = 0.2) + 
-	theme_nothing()
-
-ggsave("BayAreaMap.png")
-
-# Visaulize results ------------------------------------------------------------
+# Visualize results ------------------------------------------------------------
 
 # Aspatial summaries of the absolute numbers of jobs
 # in each cateogry are most helpful.
@@ -184,18 +177,15 @@ sum(wac.place.2011$C000[wac.place.2011$C000 > threshold]) / sum(wac.place.2011$C
 # Create a more parsimonious place label
 for(year in years.to.download)
  	assign(paste0("wac.place.", year), 
- 		transform(eval(parse(text = paste0("wac.place.", year))), place = gsub(", CA", "", stplcname)))
-
-ggsave("BayArea_LEHD_TotalJobs_2011.png", width = 8, height = 6)
+ 		transform(eval(parse(text = paste0("wac.place.", year))), place = gsub(", CA", "", placename)))
 
 # Plot the results
 ggplot(subset(wac.place.2011, wac.place.2011$C000 > threshold), 
 	aes(x = reorder(place, C000, max), y = C000)) + geom_bar(stat = "identity") + 
 	xlab(NULL) + ylab("Total jobs") + coord_flip() + theme_bw()
-	
-# Changes in job totals year-by-year
-write.table(wac.place.2010.v2, "wac_2010.csv", sep = ",", row.names = FALSE)
-write.table(wac.place.2009.v2, "wac_2009.csv", sep = ",", row.names = FALSE)
+
+ggsave("BayArea_LEHD_TotalJobs_2011.png", width = 8, height = 6)
+
 
 ## Spatial summaries for growth/decline rates by job type
 
@@ -203,10 +193,15 @@ write.table(wac.2011.2010.pct, "wac_2011_2010_pct.csv", sep = ",", row.names = F
 
 # Merge LEHD data with the map
 # First need to make a consistent identifier
-# by removing the ', CA' from stplcname
+# by adding a ', CA' to NAMELSAD10
 places.box.f$NAMELSAD10 <- paste0(places.box.f$NAMELSAD10, ", CA")
 
+# Use this merge for percentage changes
 places.box.f <- left_join(places.box.f, wac.2011.2009.pct, by = c("NAMELSAD10" = "stplcname"))
+
+# .... and this one for absolute
+places.box.f <- left_join(places.box.f, wac.2011.2009, by = c("NAMELSAD10" = "placename"))
+
 
 # Plot the map
 
@@ -219,6 +214,7 @@ names(label_points) <- c("long_", "lat_", "name")
 label_points <- left_join(label_points, wac.place.2011[, c("place", "C000")], by = c("name" = "place"))
 label_points <- transform(label_points, pretty_name = gsub("(city)|(town)|(CDP)", "", label_points$name))
  
+# Manual adjustments so that labels don't overlap
 label_points[label_points$name == "Mountain View city", "lat_"] <- 37.42
 label_points[label_points$name == "Santa Clara city", "lat_"] <- 37.35
 label_points[label_points$name == "Sunnyvale city", "long_"] <- -121.95
@@ -228,6 +224,7 @@ plot.categories <- data.frame(
 	name = c("total", "low-wage", "mid-wage", "high-wage", "information", "finance", "professional", "management",
 		"below highschool", "highschool", "some college", "bachelor's or greater"))
 
+# Use this map for percentage changes
 for(i in 1:nrow(plot.categories)) {
 	basemap + geom_polygon(data = places.box.f, aes(x = long, y = lat, group = group, 
 		fill = eval(parse(text = paste0(plot.categories[, 1][i])))), 
@@ -245,43 +242,26 @@ for(i in 1:nrow(plot.categories)) {
 	ggsave(paste0(plot.categories[, 2][i], ".png"), width = 5.5, height = 4)
 }
 
+i <- 1
 
-
+# ... and this one for absolute growth numbers
 for(i in 1:nrow(plot.categories)) {
 	basemap + geom_polygon(data = places.box.f, aes(x = long, y = lat, group = group, 
 		fill = eval(parse(text = paste0(plot.categories[, 1][i])))), 
 		color = grey(0.4), alpha = 0.7, lwd = 0.1) + 
 		geom_text(data = label_points[label_points$C000 > threshold, ], aes(x = long_, y = lat_, label = pretty_name), 
 			size = 2, fontface = 2, color = "yellow") + 
-		scale_fill_distiller(name = paste0("Change in ", plot.categories[, 2][i], " jobs\n 2010 - 2011"), type = "div",
-			palette = "RdYlBu", space = "Lab", na.value = "black", limits = c(-1, 1), breaks = pretty_breaks(n = 10),
-			guide = "legend") + 
-		guides(fill = guide_legend(override.aes = list(colour = NULL))) +
-		theme_nothing(legend = TRUE) + 
-		theme(legend.title = element_text(size = 5), legend.text = element_text(size = 5), 
-			legend.key.size = unit(8, "points")) + coord_map()
-
-	ggsave("map0_sm.png", width = 5.5, height = 4)
-}
-
-
-
-
-
-basemap + geom_polygon(data = places.box.f, aes(x = long, y = lat, group = group, 
-		fill = eval(parse(text = paste0(plot.categories[, 1][i])))), 
-		color = grey(0.4), alpha = 0.7, lwd = 0.1) + 
-		geom_text(data = label_points[label_points$C000 > threshold, ], aes(x = long_, y = lat_, label = pretty_name), 
-			size = 2, fontface = 2, color = "yellow") + 
-		scale_fill_gradient2(name = paste0("Percent change in ", plot.categories[, 2][i], "\njobs 2010 - 2011"), 
-			limits = c(-1, 1), breaks = pretty_breaks(n = 10), low = "#2C7BB6", mid = "#FFFFBF", 
+		scale_fill_gradient2(name = paste0("Change in ", plot.categories[, 2][i], " jobs\n 2009 - 2011"), 
+			breaks = pretty_breaks(n = 10), low = "#2C7BB6", mid = "#FFFFBF", 
 			high = "#A50026", midpoint = 0, space = "Lab", na.value = "black", guide = "legend") +
 		guides(fill = guide_legend(override.aes = list(colour = NULL))) +
 		theme_nothing(legend = TRUE) + 
 		theme(legend.title = element_text(size = 5), legend.text = element_text(size = 5), 
 			legend.key.size = unit(8, "points")) + coord_map()
 
-ggsave("map1.png", width = 5.5, height = 4)
+	ggsave(paste0(plot.categories[, 2][i], "_absolute.png"), width = 5.5, height = 4)
+}
+
 
 
 ## Area jobs / employed residents ratios ---------------------------------------
@@ -375,7 +355,9 @@ for(year in years.to.download) {
 	# Balance
 	balance.this <- eval(parse(text = paste0("balance.", year)))	
 	top.25.this <- filter(balance.this, place %in% places)
-	top.25.this <- select(top.25.this, place, C000, CE01, CE02, CE03, CD01, CD02, CD03, CD04, 
+	top.25.this <- select(top.25.this, place, C000, CE01, CE02, CE03, CD01, CD02, CD03, CD04, CNS01, CNS02, CNS03, 
+		CNS04, CNS05, CNS06, CNS07, CNS08, CNS09, CNS10, CNS11, CNS12, CNS13, CNS14, 
+		CNS15, CNS16, CNS17, CNS18, CNS19, CNS20,
 		year, total_jobs, total_residents)
 		
 	# Reorder place factor to descending in total jobs
@@ -388,7 +370,9 @@ for(year in years.to.download) {
 	# Raw ratio
 	ratio.this <- eval(parse(text = paste0("ratio.", year)))
 	top.25.ratio.this <- filter(ratio.this, place %in% places)
-	top.25.ratio.this <- select(top.25.ratio.this, place, C000, CE01, CE02, CE03, CD01, CD02, CD03, CD04, 
+	top.25.ratio.this <- select(top.25.ratio.this, place, C000, CE01, CE02, CE03, CD01, CD02, CD03, CD04, CNS01, CNS02, 
+		CNS03, CNS04, CNS05, CNS06, CNS07, CNS08, CNS09, CNS10, CNS11, CNS12, CNS13, CNS14, 
+		CNS15, CNS16, CNS17, CNS18, CNS19, CNS20,
 		year, total_jobs, total_residents)
 	
 	top.25.ratio.this$place <- gsub(" city, CA", "", top.25.ratio.this$place)
@@ -413,6 +397,7 @@ balance.merged <- rbind(
 
 balance.merged.educ <- filter(balance.merged, variable %in% c("CD01", "CD02", "CD03", "CD04"))
 balance.merged.wage <- filter(balance.merged, variable %in% c("CE01", "CE02", "CE03"))
+balance.merged.naics <- filter(balance.merged, variable %in% c("CNS12", "CNS18"))
 
 ratio.merged <- rbind(
 	melt(top.25.ratio.2009, id = c("place", "year", "total_jobs", "total_residents")),
@@ -421,6 +406,7 @@ ratio.merged <- rbind(
 
 ratio.merged.educ <- filter(ratio.merged, variable %in% c("CD01", "CD02", "CD03", "CD04"))
 ratio.merged.wage <- filter(ratio.merged, variable %in% c("CE01", "CE02", "CE03"))
+ratio.merged.naics <- filter(ratio.merged, variable %in% c("CNS12", "CNS18"))
 
 # Plot showing change over time for the balance indicator 
 # for the 25 jurisdictions with the greatest numbers of jobs in 2011
@@ -453,33 +439,61 @@ wage + facet_wrap(~ place) + ggtitle("Job-employed resident balance indicators b
 
 ggsave("Balance_Wage.png", width = 13, height = 15, scale = 0.6)
 
+# NAICS codes
+naics <- ggplot(balance.merged.naics, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
+	# Adjust the aesthetic to correctly plot the line
+	geom_line(aes(group = variable)) + 
+	scale_color_brewer(palette = "Dark2", 
+		labels = c("Professional, scientific, technical", "Accommodations and food services")) + 
+	xlab(NULL) + ylab("symmetric job-employed resident balance (1 = balance, 0 = imbalance)") + 
+	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
+		legend.position = "bottom")
 
-# Plot showing change over time for the ratio indicator 
+naics + facet_wrap(~ place) + ggtitle("Job-employed resident balance indicators by NAICS category")
+
+ggsave("Balance_NAICS.png", width = 13, height = 15, scale = 0.6)
+
+
+
+# Plot showing change over time for the RATIO indicator 
 # for the 25 jurisdictions with the greatest numbers of jobs in 2011
 educ <- ggplot(ratio.merged.educ, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
 	# Adjust the aesthetic to correctly plot the line
 	geom_line(aes(group = variable)) + 
 	scale_color_brewer(palette = "Dark2", 
 		labels = c("Less than high school", "High school", "Some college", "Bachelor's or above")) + 
-	xlab(NULL) + ylab("Employed resident to area jobs ratio") + 
+	xlab(NULL) + ylab("jobs-employed residents ratio") + 
 	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
 		legend.position = "bottom")
 
-educ + facet_wrap(~ place) + ggtitle("Job-worker ratio indicators by education level")
+educ + facet_wrap(~ place) + ggtitle("Job-employed resident indicators by education level")
 
 ggsave("Ratio_JER_Education.png", width = 13, height = 15, scale = 0.6)
 
-# Wage level
+# wage levels
 wage <- ggplot(ratio.merged.wage, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
 	# Adjust the aesthetic to correctly plot the line
 	geom_line(aes(group = variable)) + 
 	scale_color_brewer(palette = "Dark2", 
 		labels = c("Low-wage", "Mid-wage", "High-wage")) + 
-	xlab(NULL) + ylab("Employed resident to area jobs ratio") + 
+	xlab(NULL) + ylab("jobs-employed residents ratio") + 
 	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
 		legend.position = "bottom")
 
-wage + facet_wrap(~ place) + ggtitle("Job-worker ratio indicators by wage level")
+wage + facet_wrap(~ place) + ggtitle("Job-employed resident indicators by wage level")
 
 ggsave("Ratio_JER_Wage.png", width = 13, height = 15, scale = 0.6)
 
+# NAICS code
+naics <- ggplot(ratio.merged.naics, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
+	# Adjust the aesthetic to correctly plot the line
+	geom_line(aes(group = variable)) + 
+	scale_color_brewer(palette = "Dark2", 
+		labels = c("Professional, scientific, technical", "Accommodations and food services")) + 
+	xlab(NULL) + ylab("jobs-employed residents ratio") + 
+	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
+		legend.position = "bottom")
+
+naics + facet_wrap(~ place) + ggtitle("Job-employed resident indicators by NAICS code")
+
+ggsave("Ratio_JER_naics.png", width = 13, height = 15, scale = 0.6)
