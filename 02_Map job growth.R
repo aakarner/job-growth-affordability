@@ -16,7 +16,7 @@ library(ggmap) # add base images to maps
 # Load previously saved dataset
 load("BayAreaLEHD.RData")
 
-# Job growth
+# Prepare growth data ----------------------------------------------------------
 
 # Create absolute annual and average (3 year) job growth numbers for each 
 # jurisdiction for workers in each job category of interest.

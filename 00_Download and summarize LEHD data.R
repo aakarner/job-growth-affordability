@@ -4,7 +4,6 @@
 # Alex Karner, alex.karner@asu.edu
 # Chris Benner, ccbenner@ucdavis.edu
 
-
 # Set your working directory. 
 # The LEHD data files will be stored here. 
 
@@ -24,13 +23,14 @@ years.to.download <- c(2009, 2010, 2011)
 
 options(scipen = 999) # Supress scientific notation so we can see census geocodes
 
+library(plyr); library(dplyr)
 library(downloader) # downloads and then runs the source() function on scripts from github
 library(R.utils) # load the R.utils package (counts the number of lines in a file quickly)
 
-# create a temporary file and a temporary directory..
+# Create a temporary file and a temporary directory
 tf <- tempfile(); td <- tempdir()
 
-# load the download.cache and related functions
+# Load the download.cache and related functions
 # to prevent re-downloading of files once they've been downloaded.
 source_url( 
 	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R", 
@@ -132,7 +132,7 @@ for(year in years.to.download) {
 
 # Create summary tables by jurisdiction by year
 # Keep both place name and county name for ease of filtering
-# later on
+# below
 for(year in years.to.download) { 
 	
 	assign(paste0("wac.place.", year), ddply(eval(parse(text = paste0("wac.", year))), 
@@ -150,7 +150,6 @@ for(year in years.to.download)
 			ctyname %in% c("Alameda County, CA", "Contra Costa County, CA", "Marin County, CA", "Napa County, CA", 
 			"San Francisco County, CA", "Santa Clara County, CA", "San Mateo County, CA", "Solano County, CA", 
 				"Sonoma County, CA")))
-
 
 # Save the output so that it may be reloaded easily. 
 save.image("BayAreaLEHD.RData")

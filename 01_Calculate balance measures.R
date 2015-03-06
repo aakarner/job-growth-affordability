@@ -13,13 +13,7 @@ library(grid) # unit() functionality
 # Load previously saved dataset
 load("BayAreaLEHD.RData")
 
-
-		
-
-# Results ----------------------------------------------------------------------
-
-
-## Area jobs / employed residents ratios ---------------------------------------
+## Area jobs / employed resident balance measures ------------------------------
 
 # Calculate ratios of jobs to employed residents for each jurisdiction 
 # by year, in each job category of interest.
@@ -104,12 +98,10 @@ for(year in years.to.download) {
 	rm(ratio.this)
 }
 
-
-
 # Get top 25 places from 2011 and create
 # separate data frames for them
 # Identify the threshold that separates the top 25 from the bottom
-# Order the data frame in  descending order of total jobs
+# Order the 2011 wac data frame in  descending order of total jobs
 threshold <- wac.place.2011[order(-wac.place.2011$C000), ]$C000[26]
 
 places <- balance.2011[balance.2011$total_jobs > threshold, "place"]
@@ -137,7 +129,6 @@ for(year in years.to.download) {
 		year, total_jobs, total_residents)
 	
 	top.25.ratio.this$place <- factor(top.25.ratio.this$place)
-	
 	assign(paste0("top.25.ratio.", year), top.25.ratio.this)
 	
 	# Clean up
