@@ -103,5 +103,54 @@ for(year in years.to.download)
 
 # Each year of the LEHD data for the WAC and the crosswalk file are now imported.
 
+# Now summarize by jurisdiction
+
+# Merge geographic identifier to each year of LEHD data
+for(year in years.to.download) { 
+	
+	assign(paste0("wac.", year), merge(eval(parse(text = paste0("wac.", year))), 
+		xwalk[, c("tabblk2010", "ctyname", "stplcname")], by.x = "w_geocode", by.y = "tabblk2010"))
+	
+	assign(paste0("rac.", year), merge(eval(parse(text = paste0("rac.", year))), 
+		xwalk[, c("tabblk2010", "ctyname", "stplcname")], by.x = "h_geocode", by.y = "tabblk2010"))
+}
+
+# Add an identifier for unincorporated areas 
+for(year in years.to.download) {
+
+	# Add a new column `placename` containing stplcname if there is one
+	# and identifying the block as falling within an unincorporated area, 
+	# and the county name, if there's not
+	assign(paste0("wac.", year), with(eval(parse(text = paste0("wac.", year))), 
+		transform(eval(parse(text = paste0("wac.", year))), 
+			placename = ifelse(stplcname == "", paste0("Unincorporated ", ctyname), stplcname))))
+	
+	assign(paste0("rac.", year), with(eval(parse(text = paste0("rac.", year))), 
+		transform(eval(parse(text = paste0("rac.", year))), 
+			placename = ifelse(stplcname == "", paste0("Unincorporated ", ctyname), stplcname))))
+}
+
+# Create summary tables by jurisdiction by year
+# Keep both place name and county name for ease of filtering
+# later on
+for(year in years.to.download) { 
+	
+	assign(paste0("wac.place.", year), ddply(eval(parse(text = paste0("wac.", year))), 
+		.(placename, ctyname), numcolwise(sum)))
+	
+	assign(paste0("rac.place.", year), ddply(eval(parse(text = paste0("rac.", year))), 
+		.(placename, ctyname), numcolwise(sum)))
+}
+
+# Extract Bay Area jurisdictions only
+# Use filter() for readability and ease
+for(year in years.to.download)
+	for(j in c("wac", "rac"))
+		assign(paste0(j, ".place.", year), filter(eval(parse(text = paste0(j, ".place.", year))),
+			ctyname %in% c("Alameda County, CA", "Contra Costa County, CA", "Marin County, CA", "Napa County, CA", 
+			"San Francisco County, CA", "Santa Clara County, CA", "San Mateo County, CA", "Solano County, CA", 
+				"Sonoma County, CA")))
+
+
 # Save the output so that it may be reloaded easily. 
 save.image("BayAreaLEHD.RData")
