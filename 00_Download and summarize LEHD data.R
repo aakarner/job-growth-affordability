@@ -17,15 +17,15 @@
 # Later census updates will include more recent years of data
 years.to.download <- c(2009, 2010, 2011)
 
-# ------------------------------------------------------------------------------
-# Program start
-# ------------------------------------------------------------------------------
-
 options(scipen = 999) # Supress scientific notation so we can see census geocodes
 
 library(plyr); library(dplyr)
 library(downloader) # downloads and then runs the source() function on scripts from github
 library(R.utils) # load the R.utils package (counts the number of lines in a file quickly)
+
+# ------------------------------------------------------------------------------
+# Program start
+# ------------------------------------------------------------------------------
 
 # Create a temporary file and a temporary directory
 tf <- tempfile(); td <- tempdir()
@@ -82,6 +82,24 @@ for(year in years.to.download) {
 	
 	# And free up RAM
 	gc()
+	
+	# Data import: od flow data
+	download.cache( 
+		url = paste0("http://lehd.ces.census.gov/data/lodes/LODES7/ca/od/ca_od_main_JT00_", year, ".csv.gz"), 
+		destfile = tf, 
+		mode = 'wb'
+	)
+	
+	# Create a variable to store the od file for each year
+	assign(paste0("od.", year), read.table(gzfile(tf), header = TRUE, sep = ",", 
+		colClasses = "numeric", stringsAsFactors = FALSE))
+	
+	# Remove the temporary file from the local disk
+	file.remove(tf)
+	
+	# And free up RAM
+	gc()
+	
 }
 	
 # Download the geographic crosswalk file for California
@@ -152,4 +170,5 @@ for(year in years.to.download)
 				"Sonoma County, CA")))
 
 # Save the output so that it may be reloaded easily. 
-save.image("BayAreaLEHD.RData")
+# save.image("BayAreaLEHD.RData")
+save(list = c(paste0("od.", years.to.download), xwalk), file = "BayAreaLEHD_od.RData")
