@@ -5,15 +5,15 @@
 # Alex Karner, alex.karner@asu.edu
 # Chris Benner, ccbenner@ucdavis.edu
 #
-#
-# FILENAME:
-# 00_Download and summarize LODES data.R
-#
-# 
+# Purpose:
 # This script downloads the workplace and residence area characteristics and OD flow
 # data from the LODES data for the requested years.
+#
+# Output:
 # Once downloaded, summary tables are created for the WAC and RAC files by census place
-# for all census places and unincorporated areas in the Bay ARea. 
+# for all census places and unincorporated areas in the Bay Area. 
+# Flow data are aggregated from the block to the census place level for all destinations
+# internal to the nine-county Bay Area. Counties are used for origins outside of the Bay Area.
 
 # Set your working directory. 
 # The LEHD data files will be stored here. 
