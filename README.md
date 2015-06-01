@@ -1,7 +1,7 @@
 Job growth, housing affordability, and commuting in the Bay Area
 ==========
 
-The goal of this work is to understand how post-recession changes in job and housing markets are affecting affordability for workers earning in the lowest income tiers. To understand these patterns, we employ two main data sources, the [Longitudinal Employer-Household Dynamics Origin-Destination Employment Statistics (LODES)](http://lehd.ces.census.gov/data/) data and the [American Community Survey (ACS)](http://www.census.gov/acs/www/). Several other data sources are employed to generate estimates of roadway-traveled commute distances in the Bay Area. Preparation of these data requires some additional processing
+The goal of this work is to understand how post-recession changes in job and housing markets are affecting affordability for workers earning in the lowest income tiers. To understand these patterns, we employ two main data sources, the [Longitudinal Employer-Household Dynamics Origin-Destination Employment Statistics (LODES)](http://lehd.ces.census.gov/data/) data and the [American Community Survey (ACS)](http://www.census.gov/acs/www/). Several other data sources are employed to generate estimates of roadway-traveled commute distances in the Bay Area. Preparation of these data requires some additional processing. We will include the needed scripts here at a later date. 
 
 Sequentially executing the scripts included in this repository will reproduce the analyses and figures developed by the study's authors. 
 
