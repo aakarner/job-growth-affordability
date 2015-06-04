@@ -14,14 +14,19 @@
 # for all census places and unincorporated areas in the Bay Area. 
 # Flow data are aggregated from the block to the census place level for all destinations
 # internal to the nine-county Bay Area. Counties are used for origins outside of the Bay Area.
+# Each rac, wac, and od file for each year is output to an .RData file in the 
+# working directory.
+#
+# Inspiration and some code from Anthony Damico's analyze survey data project:
+# https://github.com/ajdamico/usgsd
 
 # Set your working directory. 
-# The LEHD data files will be stored here. 
+# The LODES data files will be stored here. 
 
 # Uncomment this line by removing the '#' in front..
 # setwd("C:/My Directory/LEHD")
 # .. in order to set your current working directory.
-# setwd("D:/Dropbox/Work/hig-wage job growth
+# setwd("D:/Dropbox/Work/high-wage job growth")
 
 # Variable definitions --------------------------------------------------------
 

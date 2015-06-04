@@ -1,25 +1,41 @@
 # Effect of high-wage job growth on housing demand on the San Francisco Bay Area
-# Analysis using the Longitudinal Employer-Household Dynamics (LEHD) Origin-Destination
-# Employment Statistics (LODES) dataset 2008-2011
+# Analysis using the Longitudinal Employer-Household Dynamics Origin-Destination
+# Employment Statistics (LODES) data 2008-2011 and the American Community Survey
 #
 # Alex Karner, alex.karner@asu.edu
 # Chris Benner, ccbenner@ucdavis.edu
 #
+# Purpose:
 # This script adds distance skims to the LODES OD flow matrices using
 # TAZ-level MTC data for origins and destinations located within the Bay Area,
 # and county-county Google Maps skims for origins located outside the Bay Area. 
+# 
+# Output:
+# One .RData file containing place-place skims for origins and destinations in 
+# the Bay Area and county-county skims for the rest of the state.
+
+library(MonetDB.R)
+library(ggmap)
+
+# Set your working directory. 
+# The skim database will be stored here. 
+
+# Uncomment this line by removing the '#' in front..
+# setwd("C:/My Directory/LEHD")
+# .. in order to set your current working directory.
+# setwd("D:/Dropbox/Work/high-wage job growth")
 
 # Create database --------------------------------------------------------------
 # (these commands only need to be executed once)
+# For more information on using MonetDB, see:
+# https://github.com/ajdamico/usgsd/blob/master/MonetDB/monetdb%20installation%20instructions.R
 #
-# setwd("D:\\Dropbox\\Work\\high-wage job growth\\data\\flow data")
-# 
 # ONLY RUN ONCE: create a monetdb executable (.bat) file for the MTC travel data
 # batfile <-
 # 	monetdb.server.setup(
 # 		
 # 		# set the path to the directory where the initialization batch file and all data will be stored
-# 		database.directory = paste0( getwd(), "/MonetDB" ),
+# 		database.directory = paste0(getwd(), "data/flow data/MonetDB"),
 # 		# must be empty or not exist
 # 		
 # 		# find the main path to the monetdb installation program
@@ -36,7 +52,7 @@
 # 	)
 
 # Connect to database
-batfile <- "D:\\Dropbox\\Work\\high-wage job growth\\data\\flow data\\MonetDB\\flowdata.bat"
+batfile <- paste0(getwd(), "/data/flow data/MonetDB/flowdata.bat")
 pid <- monetdb.server.start(batfile)
 dbname <- "flowdata" 
 dbport <- 57000
@@ -49,35 +65,35 @@ dbDisconnect(db)
 monetdb.server.stop(pid)
 
 # Load county and place OD flow data 
-setwd("D:\\Dropbox\\Work\\high-wage job growth\\data")
-load("BayAreaLEHD_od_FINAL.RData")
+load("data/BayAreaLEHD_od_FINAL.RData")
 
 # Query commute distances ------------------------------------------------------
 
 # These distances were created from a variety of sources, including:
 #
-# 1. MTC's travel model skims. These are esimates of distances traveled between
-# traffic analysis zones I generated a place-place origin destination matrix by 
-# identifying the population-weighted centroid of each census place, using populations
-# in blocks as the weights, and associating that point with a TAZ. Place-place skims
+# 1. MTC's travel model skims for origins and destinations within the Bay Area. 
+# These are esimates of distances traveled 
+# on the roadway network between traffic analysis zones for 2010. I generated a 
+# place-place origin destination matrix by identifying the population-weighted 
+# centroid of each census place, using populations in blocks as the weights, 
+# and associating that point with a TAZ. Place-place skims
 # within the Bay Area can this be thought of as TAZ-TAZ skims. 
 # 
-# 2. 
+# 2. Google Maps queries for origins and destinations outside the Bay Area.
+# These trips use population-weighted *county* centroids at both the origin 
+# and destination end. The rationale is that the county-county distances are going 
+# to be much larger than the difference associated with using place-place flows. 
+# Also it cuts down the number of required queries substantially. 
 
-# In ArcGIS I created a point feature class that contains each population-weighted
-# place centroid matched to a corresponding block-group.
-
-# Read this into R, create a full OD matrix,
-# read into the database to populate it with available skims and then 
-# output it back into R space.
-
-places.pt <- read.table("MTC_2010_places_pt_wTAZ.csv", sep = ",", header = TRUE, row.names = NULL)
+# Population-weighted place centorid associated with a TAZ
+places.pt <- read.table("data/MTC_2010_places_pt_wTAZ.csv", sep = ",", header = TRUE, row.names = NULL)
 places.pt <- places.pt[, c("NAMELSAD10", "TAZ1454")]
 names(places.pt) <- c("o_place", "o_taz")
 
 places <- rep(places.pt$o_place, 228)
 tazs <- rep(places.pt$o_taz, 228)
 
+# Build the shell of the OD table
 bay.area.od <- data.frame("o_place" = places, "o_taz" = tazs)
 temp.od <- data.frame("d_place" = places, "d_taz" = tazs)
 temp.od <- temp.od[order(temp.od$d_place), ]
@@ -85,6 +101,7 @@ row.names(temp.od) <- 1:(228^2)
 
 bay.area.od <- cbind(bay.area.od, temp.od)
 
+# Write it to the database
 dbWriteTable(db, "bay_area_od", bay.area.od)
 
 # Read MTC skims into the database
@@ -163,58 +180,5 @@ for(i in 1:nrow(places.to.skim)) {
 	places.to.skim[i, "time"] <- this.skim$minutes
 }
 
-# Save the county-county skims
-save(list = "places.to.skim", file = "CountySkims_Google.RData")
-
-# Calculate weighted mean commute distance by place
-for(year in years.to.download) { 
-	this.year <- eval(parse(text = paste0("od.", year, ".place")))
-	
-	# Remove ", CA" suffix to facilitate join
-	this.year$h_plc <- gsub(", CA", "", this.year$h_plc)
-	this.year$w_plc <- gsub(", CA", "", this.year$w_plc)
-	
-	# Join skims to table
-	this.year <- left_join(this.year, bay.area.od, by = c("h_plc" = "o_place", "w_plc" = "d_place"))
-	
-	places.to.skim$h_plc <- as.character(places.to.skim$h_plc)
-	places.to.skim$w_cty <- as.integer(places.to.skim$w_cty)
-	
-	# The remaining places are counties of residence outside the Bay Area
-	this.year <- left_join(this.year, select(places.to.skim, h_plc, w_cty, miles), by = c("h_plc" = "h_plc", 
-		"w_cty" = "w_cty"))
-	
-	# Update the skim with the county data
-	this.year$skim <- ifelse(is.na(this.year$skim), this.year$miles, this.year$skim)
-	
-	this.year <- mutate(this.year, 
-		s000_d = S000 * skim,
-		sa01_d = SA01 * skim,
-		sa02_d = SA02 * skim,
-		sa03_d = SA03 * skim,
-		se01_d = SE01 * skim,
-		se02_d = SE02 * skim,
-		se03_d = SE03 * skim,
-		t1t2_d = t1t2 * skim,
-		si01_d = SI01 * skim,
-		si02_d = SI02 * skim,
-		si03_d = SI03 * skim)
-
-	this.year <- group_by(this.year, w_plc)
-
-	this.year <- summarize(this.year,
-		S000 = sum(s000_d) / sum(S000),
-		SA01 = sum(sa01_d) / sum(SA01), SA02 = sum(sa02_d) / sum(SA02), SA03 = sum(sa03_d) / sum(SA03),
-		SE01 = sum(se01_d) / sum(SE01), SE02 = sum(se02_d) / sum(SE02), SE03 = sum(se03_d) / sum(SE03),
-		SI01 = sum(si01_d) / sum(SI01), SI02 = sum(si02_d) / sum(SI02), SI03 = sum(si03_d) / sum(SI03),
-		t1t2 = sum(t1t2_d) / sum(t1t2))
-
-	# Add year identifier
-	this.year$year <- year
-	
-	this.year <- melt(this.year, id = c("w_plc", "year"))
-	
-	assign(paste0("commutes.", year), this.year)
-	
-	rm(this.year)
-}
+# Save the skims
+save(list = c("places.to.skim", "bay.area.od"), file = "data/MTCandCountySkims_Google.RData")

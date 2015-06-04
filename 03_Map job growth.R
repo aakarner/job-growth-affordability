@@ -1,7 +1,16 @@
-# Map growth in job categories by jurisdiction
-
+# Effect of high-wage job growth on housing demand on the San Francisco Bay Area
+# Analysis using the Longitudinal Employer-Household Dynamics Origin-Destination
+# Employment Statistics (LODES) data 2008-2011 and the American Community Survey
+#
 # Alex Karner, alex.karner@asu.edu
 # Chris Benner, ccbenner@ucdavis.edu
+#
+# Purpose:
+# Create maps of job growth and decline in job categories by jurisdiction.
+# 
+# Output: 
+# Map images for the Bay Area showing job growth and decline in various categories
+# over the time period of interest.
 
 library(plyr); library(dplyr)
 library(reshape2)
@@ -13,8 +22,10 @@ library(rgdal) # interface for the Geospatial Abstraction Library
 library(rgeos)
 library(ggmap) # add base images to maps
 
-# Set working directory
+# Uncomment this line by removing the '#' in front..
+# setwd("C:/My Directory/LEHD")
 # setwd("D:/Dropbox/Work/high-wage job growth")
+# .. in order to set your current working directory.
 
 # Load previously saved dataset
 load("data/BayAreaLEHD.RData")
@@ -148,13 +159,13 @@ ggplot(subset(wac.place.2011, wac.place.2011$C000 > threshold),
 	aes(x = reorder(place, C000, max), y = C000)) + geom_bar(stat = "identity") + 
 	xlab(NULL) + ylab("Total jobs") + coord_flip() + theme_bw()
 
-ggsave("BayArea_LEHD_TotalJobs_2011.png", width = 8, height = 6)
+ggsave("output/BayArea_LEHD_TotalJobs_2011.png", width = 8, height = 6)
 
 # Mapping ----------------------------------------------------------------------
 
 ## Spatial summaries for growth/decline rates by job type
 
-write.table(wac.2011.2010.pct, "wac_2011_2010_pct.csv", sep = ",", row.names = FALSE)
+write.table(wac.2011.2010.pct, "output/wac_2011_2010_pct.csv", sep = ",", row.names = FALSE)
 
 # Merge LEHD data with the map
 # First need to make a consistent identifier

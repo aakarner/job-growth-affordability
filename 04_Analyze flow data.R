@@ -1,24 +1,26 @@
-# Anlayze LEHD flow data
-# Create metrics of internal capture
-
+# Effect of high-wage job growth on housing demand on the San Francisco Bay Area
+# Analysis using the Longitudinal Employer-Household Dynamics Origin-Destination
+# Employment Statistics (LODES) data 2008-2011 and the American Community Survey
+#
 # Alex Karner, alex.karner@asu.edu
 # Chris Benner, ccbenner@ucdavis.edu
-
-# Set your working directory. 
-# The LEHD data files will be stored here. 
+#
+# Purpose:
+# Create and visualize metrics of internal capture and commute distance.
+#
+# Output:
+# Visualizations of internal capture and commute distance by year and jurisdiction.
 
 # Uncomment this line by removing the '#' in front..
 # setwd("C:/My Directory/LEHD")
-# setwd("D:/Dropbox/Work/high-wage job growth/data")
 # .. in order to set your current working directory.
+# setwd("D:/Dropbox/Work/high-wage job growth")
 
 options(scipen = 999) # Supress scientific notation so we can see census geocodes
 
 library(plyr); library(dplyr)
 library(MonetDB.R)
 library(R.utils)
-require(igraph)
-require(googleVis)
 library(ggmap) # To query driving distances
 library(reshape2)
 library(grid) # unit() functionality
@@ -28,17 +30,68 @@ library(scales)
 
 # Load previously saved dataset
 # containing block level flows for California
-load("data/CA_LEHD_od_blocks.RData")
-load("data/CountySkims_Google.RData")
+load("data/BayAreaLEHD_od_FINAL.RData")
+load("data/MTCandCountySkims_Google.RData")
+
+# Calculate weighted mean commute distance by place of work
+for(year in years.to.download) { 
+	this.year <- eval(parse(text = paste0("od.", year, ".place")))
+	
+	# Remove ", CA" suffix to facilitate join
+	this.year$h_plc <- gsub(", CA", "", this.year$h_plc)
+	this.year$w_plc <- gsub(", CA", "", this.year$w_plc)
+	
+	# Join skims to table
+	this.year <- left_join(this.year, bay.area.od, by = c("h_plc" = "o_place", "w_plc" = "d_place"))
+	
+	places.to.skim$h_plc <- as.character(places.to.skim$h_plc)
+	places.to.skim$w_cty <- as.integer(places.to.skim$w_cty)
+	
+	# The remaining places are counties of residence outside the Bay Area
+	this.year <- left_join(this.year, select(places.to.skim, h_plc, w_cty, miles), by = c("h_plc" = "h_plc", 
+		"w_cty" = "w_cty"))
+	
+	# Update the skim with the county data
+	this.year$skim <- ifelse(is.na(this.year$skim), this.year$miles, this.year$skim)
+	
+	this.year <- mutate(this.year, 
+		s000_d = S000 * skim,
+		sa01_d = SA01 * skim,
+		sa02_d = SA02 * skim,
+		sa03_d = SA03 * skim,
+		se01_d = SE01 * skim,
+		se02_d = SE02 * skim,
+		se03_d = SE03 * skim,
+		t1t2_d = t1t2 * skim,
+		si01_d = SI01 * skim,
+		si02_d = SI02 * skim,
+		si03_d = SI03 * skim)
+
+	this.year <- group_by(this.year, w_plc)
+
+	this.year <- summarize(this.year,
+		S000 = sum(s000_d) / sum(S000),
+		SA01 = sum(sa01_d) / sum(SA01), SA02 = sum(sa02_d) / sum(SA02), SA03 = sum(sa03_d) / sum(SA03),
+		SE01 = sum(se01_d) / sum(SE01), SE02 = sum(se02_d) / sum(SE02), SE03 = sum(se03_d) / sum(SE03),
+		SI01 = sum(si01_d) / sum(SI01), SI02 = sum(si02_d) / sum(SI02), SI03 = sum(si03_d) / sum(SI03),
+		t1t2 = sum(t1t2_d) / sum(t1t2))
+
+	# Add year identifier
+	this.year$year <- year
+	
+	this.year <- melt(this.year, id = c("w_plc", "year"))
+	
+	assign(paste0("commutes.", year), this.year)
+	
+	rm(this.year)
+}
 
 
 # Plot results
 
 # identify top 25 workplaces for visualization
-# Grab from '01_Calculate balance measures.R'
-
+load("data/Top25Places.RData")
 places <- gsub(", CA", "", places)
-places[places == "Unincorporated Sonoma County"] = "Unincorporated Sonoma county"
 
 commutes.plot <- rbind(commutes.2011, commutes.2010, commutes.2009, commutes.2008)
 commutes.plot <- filter(commutes.plot, w_plc %in% places)
@@ -58,8 +111,7 @@ inc <- ggplot(filter(commutes.plot, variable %in% c("SE01", "SE02", "SE03")),
 	
 inc + facet_wrap(~ w_plc)
 
-setwd("D:/Dropbox/Work/high-wage job growth/output")
-ggsave("Commute_Income.png", width = 14, height = 15, scale = 0.6)
+ggsave("output/Commute_Income.png", width = 14, height = 15, scale = 0.6)
 
 # industry categories
 ind <- ggplot(filter(commutes.plot, variable %in% c("SI01", "SI02", "SI03")), 
@@ -74,7 +126,7 @@ ind <- ggplot(filter(commutes.plot, variable %in% c("SI01", "SI02", "SI03")),
 	
 ind + facet_wrap(~ w_plc)
 
-ggsave("Commute_Income.png", width = 14, height = 15, scale = 0.6)
+ggsave("output/Commute_Income.png", width = 14, height = 15, scale = 0.6)
 
 # Age
 age <- ggplot(filter(commutes.plot, variable %in% c("SA01", "SA02", "SA03")), 
@@ -89,23 +141,7 @@ age <- ggplot(filter(commutes.plot, variable %in% c("SA01", "SA02", "SA03")),
 	
 age + facet_wrap(~ w_plc)
 
-ggsave("Commute_age.png", width = 14, height = 15, scale = 0.6)
-
-
-# identify silicon valley places
-
-# Commutes into silicon valley compared to the rest of the Bay Area
-sv.places <- read.table("Silicon_Valley_Places.csv", sep = ",", header = TRUE, row.names = NULL)
-sv.places <- data.frame("place" = sv.places[, "NAMELSAD10"])
-
-commutes.2011.sv <- semi_join(commutes.2011, sv.places, by = c("w_plc" = "place"))
-
-# 2011 and 2008 v 2011
-# Top 25 silicon valley, top 25 bay area
-# Sankey plots
-# Internal capture
-# disparities between low, mid, high? - maybe not meaningful. could do disparities
-# between low, mid, and overall mean
+ggsave("output/Commute_age.png", width = 14, height = 15, scale = 0.6)
 
 # Internal capture -------------------------------------------------------------
 
@@ -163,7 +199,7 @@ inc <- ggplot(filter(internal.plot, variable %in% c("i_SE01", "i_SE02", "i_SE03"
 	
 inc + facet_wrap(~ plc)
 
-ggsave("Internal capture_Income.png", width = 14, height = 15, scale = 0.6)
+ggsave("output/Internal capture_Income.png", width = 14, height = 15, scale = 0.6)
 
 # Industry groups
 ind <- ggplot(filter(internal.plot, variable %in% c("i_SI01", "i_SI02", "i_SI03")), 
@@ -178,8 +214,7 @@ ind <- ggplot(filter(internal.plot, variable %in% c("i_SI01", "i_SI02", "i_SI03"
 	
 ind + facet_wrap(~ plc)
 
-setwd("D:/Dropbox/Work/high-wage job growth/output")
-ggsave("Internal capture_Industry.png", width = 14, height = 15, scale = 0.6)
+ggsave("output/Internal capture_Industry.png", width = 14, height = 15, scale = 0.6)
 
 # Age
 age <- ggplot(filter(internal.plot, variable %in% c("i_SA01", "i_SA02", "i_SA03")), 
@@ -195,62 +230,3 @@ age <- ggplot(filter(internal.plot, variable %in% c("i_SA01", "i_SA02", "i_SA03"
 age + facet_wrap(~ plc)
 
 ggsave("output/Internal capture_age.png", width = 14, height = 15, scale = 0.6)
-
-
-# Prepare geographic data ------------------------------------------------------
-
-# Import shapefile of 2010 California Census places.
-places.bay <- readOGR("GIS/Bay Area Place (2010, clipped)", layer = "tl_2010_06_place10")
-
-# Reproject to NAD83 California Albers
-places.NAD83_CA <- spTransform(places.bay, CRS("+init=epsg:3310"))
-places.f <- fortify(places.NAD83_CA, region = "GEOID10")
-places.f <- merge(places.f, places.NAD83_CA@data, by.x = "id", by.y = "GEOID10")
-
-# Map the places
-ggplot(places.f, aes(long, lat, group = group)) + geom_polygon() + coord_equal()
-
-# Add some basemap imagery
-places.box <- spTransform(places.bay, CRS("+init=epsg:4326"))
-b <- bbox(places.box)
-b[1, ] <- (b[1, ] - mean(b[1, ])) * 1.05 + mean(b[1, ])
-b[2, ] <- (b[2, ] - mean(b[2, ])) * 1.05 + mean(b[2, ])
-# scale longitude and latitude (increase bb by 5% for plot) replace 1.05
-# with 1.xx for an xx% increase in the plot size
-
-basemap <- ggmap(get_map(location = b, source = "google", maptype = "satellite", crop = TRUE), darken = 0.8)
-places.box.f <- fortify(places.box, region = "GEOID10")
-places.box.f <- merge(places.box.f, places.box@data, by.x = "id", by.y = "GEOID10")
-
-# Merge commute and internal capture data with the map
-places.box.f <- left_join(places.box.f, internal.2011, by = c("NAMELSAD10" = "plc"))
-places.box.f <- left_join(places.box.f, commutes.2011.2, by = c("NAMELSAD10" = "w_plc"))
-
-# Plot the map
-
-# Get long/lat of polygons
-# ggplot can't label them directly because of the need
-# to fortify
-label_points <- data.frame(coordinates(places.bay))
-label_points <- cbind(label_points, places.bay@data$NAMELSAD10)
-names(label_points) <- c("long_", "lat_", "name")
-label_points <- left_join(label_points, wac.place.2011[, c("place", "C000")], by = c("name" = "place"))
-label_points <- transform(label_points, pretty_name = gsub("(city)|(town)|(CDP)", "", label_points$name))
- 
-# Manual adjustments so that labels don't overlap
-label_points[label_points$name == "Mountain View city", "lat_"] <- 37.42
-label_points[label_points$name == "Santa Clara city", "lat_"] <- 37.35
-label_points[label_points$name == "Sunnyvale city", "long_"] <- -121.95
-
-basemap + geom_polygon(data = places.box.f, aes(x = long, y = lat, group = group, 
-	fill = S000)) + 
-	scale_color_brewer(name = "Internal cap_s000") +
-		guides(fill = guide_legend(override.aes = list(colour = NULL))) +
-		theme_nothing(legend = TRUE) + 
-		theme(legend.title = element_text(size = 5), legend.text = element_text(size = 5)) + coord_map()
-			
-			
-			legend.key.size = unit(8, "points")) + coord_map()
-
-	ggsave(paste0(plot.categories[, 2][i], ".png"), width = 5.5, height = 4)
-}

@@ -1,22 +1,49 @@
+# Effect of high-wage job growth on housing demand on the San Francisco Bay Area
+# Analysis using the Longitudinal Employer-Household Dynamics Origin-Destination
+# Employment Statistics (LODES) data 2008-2011 and the American Community Survey
+#
+# Alex Karner, alex.karner@asu.edu
+# Chris Benner, ccbenner@ucdavis.edu
+#
+# Purpose:
+# Visualize changes in job and housing totals in the 19 jurisdictions in the Bay Area 
+# with complete housing data available in the 2013-2011 and 2010-2008 thre-year ACS datasets.
+#
+# The user must have previously prepared differences in housing numbers using the ACS
+# three-year datasets since they're not presently available from the Census API. 
+#
+# Output: 
+# A series of figures illustrating housing unit changes, housing unit changes
+# in relationship to job growth/decline, and change in metrics of jobs-housing fit. 
+
+# Set your working directory. 
+# The LODES data files will be stored here. 
+
+# Uncomment this line by removing the '#' in front..
+# setwd("C:/My Directory/LEHD")
+# .. in order to set your current working directory.
+# setwd("D:/Dropbox/Work/high-wage job growth")
+
 library(ggplot2)
 library(directlabels)
 library(reshape2)
 library(plyr); library(dplyr)
 
-# setwd("D:/Dropbox/Work/high-wage job growth/")
-
 # This saved file contains the wac and rac data for 2008-2011
-
 load("data/BayAreaLEHD.Rdata")
+
+# Post-process the wac and rac data to contain some additional employment categories.
 
 # Add high and low wage NAICS categories
 # Low-wage NAICS codes (Retail trade + Arts, Entertainment, and Recreation + Accommodation and food services)
 # High-wage NAICS codes (Information + Finance and Insurance + Professional + Management)
-wac.place.2008 <- mutate(wac.place.2008, naics_hi = CNS09 + CNS10 + CNS12 + CNS13, naics_lo = CNS07 + CNS17 + CNS18 + CNS14 + CNS19)
-wac.place.2009 <- mutate(wac.place.2009, naics_hi = CNS09 + CNS10 + CNS12 + CNS13, naics_lo = CNS07 + CNS17 + CNS18 + CNS14 + CNS19)
-wac.place.2010 <- mutate(wac.place.2010, naics_hi = CNS09 + CNS10 + CNS12 + CNS13, naics_lo = CNS07 + CNS17 + CNS18 + CNS14 + CNS19)
-wac.place.2011 <- mutate(wac.place.2011, naics_hi = CNS09 + CNS10 + CNS12 + CNS13, naics_lo = CNS07 + CNS17 + CNS18 + CNS14 + CNS19)
+for(year in years.to.download) { 
+	assign(paste0("wac.place.", year), mutate(eval(parse(text = paste0("wac.place.", year))),
+		naics_hi = CNS09 + CNS10 + CNS12 + CNS13, 
+		naics_lo = CNS07 + CNS17 + CNS18 + CNS14 + CNS19))
+}
 
+# Drop the 'createdate' column
 wac.place.2008 <- wac.place.2008[, -c(55)]
 wac.place.2009 <- wac.place.2009[, -c(55)]
 wac.place.2010 <- wac.place.2010[, -c(55)]
@@ -41,8 +68,8 @@ wac.diff <- cbind(wac.place.08.10[, 1:2], "total_jobs" = wac.place.2011[, 4],
 wac.diff.pct <- cbind(wac.place.08.10[, 1:2], "total_jobs" = wac.place.2011[, 4], 
 	(wac.place.2011[, 4:56] - wac.place.08.10[, 3:55])/wac.place.08.10[, 3:55])
 
-as.character(wac.place.08.10$placename) == as.character(wac.place.2011$placename)
-write.table(wac.diff, "LEHD_diff_temp.csv", sep = ",", row.names = FALSE)
+# Ensure all place names match
+stopifnot(as.character(wac.place.08.10$placename) == as.character(wac.place.2011$placename))
 
 # Read in the ACS data
 # Eventually we'll transition to the acs package, but the census API 
@@ -66,7 +93,7 @@ acs.housing <- semi_join(acs.housing, wac.diff, by = c("name" = "placename"))
 jobs.housing <- inner_join(wac.diff, acs.housing, by = c("placename" = "name"))
 
 
-# Scatterplots  ----------------------------------------------------------------
+# Visualize results ------------------------------------------------------------
 # And color by the statistical significance of the difference (for ACS)
 
 acs.housing.sub <- acs.housing[acs.housing$overall == 1, ]
@@ -77,7 +104,6 @@ acs.housing.est <- acs.housing.sub[, c("name", "lw_r_e", "mw_r_e", "lw_o_e", "mw
 
 acs.housing.err <- acs.housing.sub[, c("name", "lw_r_m", "mw_r_m", "lw_o_m", "mw_o_m", "lw_t_m", "mw_t_m",
 	"t1t2_r_m", "t1t2_o_m", "t1t2_t_m", "t_r_m", "t_o_m", "t_m")]
-
 
 acs.housing.err <- melt(acs.housing.err, id = "name")
 names(acs.housing.err) <- c("name", "error_type", "moe90")
@@ -125,7 +151,7 @@ plot2 <- ggplot(filter(to.plot.change, variable %in% c("Tier 2 rentals", "Tier 2
 	theme(plot.title = element_text(size = 15, face = "bold", vjust = 2), legend.position = "bottom")
 	
 plot2 + facet_wrap(~ variable)
-ggsave("OverallHousingChange_mw_3yr.png", height = 4.5, width = 12)
+ggsave("output/OverallHousingChange_mw_3yr.png", height = 4.5, width = 12)
 
 # Tier 1 + Tier 2 -- Combined low and mid wage
 to.plot.change$name <- factor(to.plot.change$name, 
@@ -140,7 +166,7 @@ plot3 <- ggplot(filter(to.plot.change, variable %in% c("Tier 1 + 2 rentals", "Ti
 	theme(plot.title = element_text(size = 15, face = "bold", vjust = 2), legend.position = "bottom")
 
 plot3 + facet_wrap(~ variable)
-ggsave("OverallHousingChange_t1t2_3yr.png", height = 4.5, width = 12)
+ggsave("output/OverallHousingChange_t1t2_3yr.png", height = 4.5, width = 12)
 
 # Total
 to.plot.change$name <- factor(to.plot.change$name, 
@@ -155,8 +181,7 @@ plot3 <- ggplot(filter(to.plot.change, variable %in% c("Total rental units", "To
 	theme(plot.title = element_text(size = 15, face = "bold", vjust = 2), legend.position = "bottom")
 	
 plot3 + facet_wrap(~ variable)
-ggsave("OverallHousingChange_total_3yr.png", height = 4.5, width = 12)
-
+ggsave("output/OverallHousingChange_total_3yr.png", height = 4.5, width = 12)
 
 # Rank chart
 acs.housing.sub$rank_low <- rank(acs.housing.sub$lw_t_e) - 9.5
@@ -209,8 +234,6 @@ ggplot(acs.housing.sub, aes(x = t_r_e, y = t1t2_r_e)) + geom_point(size = 3.5) +
 	theme(axis.text = element_text(size = 13), axis.title = element_text(size = 15))
 
 ggsave("output/TotalProdvst1t2Prod_Rentals.svg", height = 6, width = 9)
-
-
 
 # Big 3 figures
 ggplot(filter(acs.housing.sub, name %in% c("San Jose", "San Francisco", "Oakland")), aes(x = t_r_e, y = t1t2_r_e)) + geom_point(size = 5) + 
@@ -488,8 +511,6 @@ ggplot(filter(jobs.housing, name %in% c("San Francisco", "San Jose", "Oakland"))
 ggsave("output/Big3_HousingJobs_NAICS_hi_total.svg", height = 6, width = 9)
 
 
-
-
 # Rentals - information jobs, low wage affordable
 ggplot(jobs.housing, aes(x = CNS10, y = lw_r_e, size = log(total_jobs), label = name,
 	color = as.factor(lw_r_m > 1.64 | lw_r_m < -1.64))) + geom_point() + 
@@ -521,8 +542,6 @@ ggplot(jobs.housing, aes(x = CNS12, y = mw_r_e, size = log(total_jobs), label = 
 ggsave("HousingJobs_prof_mwaff.png", height = 8, width = 11, dpi = 500)
 
 # Relationship between high-wage and low-wage job growth
-
-
 
 ggplot(wac.diff, aes(x = CNS12, y = CE01, label = placename)) + geom_point() + geom_smooth(method = "lm") +
 	xlab("change in professional jobs") + ylab("change in tier 1 jobs") + 
