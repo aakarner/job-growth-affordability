@@ -10,7 +10,7 @@ Overview of included scripts:
 * **01_Add skims.R.** In order to add distance traveled data to the OD flows, this script creates a MonetDB database and connects 
 * **02_Calculate balance measures.R.** This scipt loads required residence and workplace area characteristics, calculates job-employed resident ratios for the Bay Area's 25 largest employers and visualizes the results. 
 * **03_Map job growth.R.** Create maps illustrating changes in job totals and proportions from the three-year 2008-2010 average to 2011.
-* **04_Analyze flow data.R.** Calculate metrics of internal capture from the OD flow data.
+* **04_Analyze flow data.R.** Calculate metrics of internal capture and average commute distance from the OD flow data.
 * **05_Analyze housing data.R.** Visualize changes in job and housing totals in the 19 jurisdictions in the Bay Area with complete housing data available in the 2013-2011 and 2010-2008 thre-year ACS datasets.
 * **06_Analyze correlations.R.** Calculate correlation coefficients for some of the job and housing variables. 
 * **07_Analyze added workers.R.** Calculate and visualize the distances traveled for workers added in 2011 relative to the 2008-2010 three-year average.
