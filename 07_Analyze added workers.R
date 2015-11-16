@@ -1,8 +1,12 @@
+library(reshape2)
+library(dplyr)
+
+
 setwd("D:/Dropbox/Work/high-wage job growth")
 
 # Load required data
 load("data/BayAreaLEHD_od_FINAL.RData")
-load("data/CountySkims_Google.RData")
+load("data/MTCandCountySkims_Google.RData")
 
 
 # PROGRAM START
