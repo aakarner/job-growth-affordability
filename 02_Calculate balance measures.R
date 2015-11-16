@@ -1,16 +1,16 @@
 # Effect of high-wage job growth on housing demand on the San Francisco Bay Area
 # Analysis using the Longitudinal Employer-Household Dynamics Origin-Destination
-# Employment Statistics (LODES) data 2008-2011 and the American Community Survey
+# Employment Statistics (LODES) data 2008-2013 and the American Community Survey
 #
-# Alex Karner, alex.karner@asu.edu
-# Chris Benner, ccbenner@ucdavis.edu
+# Alex Karner, alex.karner@coa.gatech.edu
+# Chris Benner, cbenner@ucsc.edu
 #
 # Purpose:
 # Create summary job-employed resident balance measures by jurisdiction.
 #
 # Output:
 # Figures depicting measures of balance for the top 25 Bay Area employers
-# as of 2011. An .RData file containing the place names of these 25 places.
+# as of 2013. An .RData file containing the place names of these 25 places.
 
 # Uncomment this line by removing the '#' in front..
 # setwd("C:/My Directory/LEHD")
@@ -34,7 +34,7 @@ load("data/BayAreaLEHD.RData")
 # Illustrate trends over time for the Bay Area's largest jurisdictions
 
 # Identify common places in each year
-balance.places <- union(wac.place.2011$placename, rac.place.2011$placename)
+balance.places <- union(wac.place.2013$placename, rac.place.2013$placename)
 
 for(year in years.to.download) {	
 	wac.balance.this <- data.frame("place" = balance.places)
@@ -111,13 +111,13 @@ for(year in years.to.download) {
 	rm(ratio.this)
 }
 
-# Get top 25 places from 2011 and create
+# Get top 25 places from 2013 and create
 # separate data frames for them
 # Identify the threshold that separates the top 25 from the bottom
-# Order the 2011 wac data frame in  descending order of total jobs
-threshold <- wac.place.2011[order(-wac.place.2011$C000), ]$C000[26]
+# Order the 2013 wac data frame in  descending order of total jobs
+threshold <- wac.place.2013[order(-wac.place.2013$C000), ]$C000[26]
 
-places <- balance.2011[balance.2011$total_jobs > threshold, "place"]
+places <- balance.2013[balance.2013$total_jobs > threshold, "place"]
 places <- places[!is.na(places)]
 
 save(list = "places", file = "data/Top25Places.RData")
@@ -155,15 +155,17 @@ for(year in years.to.download) {
 balance.merged <- rbind(
 	melt(top.25.2009, id = c("place", "year", "total_jobs", "total_residents")),
 	melt(top.25.2010, id = c("place", "year", "total_jobs", "total_residents")),
-	melt(top.25.2011, id = c("place", "year", "total_jobs", "total_residents")))
+	melt(top.25.2011, id = c("place", "year", "total_jobs", "total_residents")),
+	melt(top.25.2012, id = c("place", "year", "total_jobs", "total_residents")),
+	melt(top.25.2013, id = c("place", "year", "total_jobs", "total_residents")))
 
 # Reorder place factor to descend in total jobs in 2011
 # to be used below for plotting
 balance.merged$place <- gsub(" city, CA", "", balance.merged$place)
 
 balance.merged$place <- factor(balance.merged$place, levels = levels(reorder(
-	 filter(balance.merged, year == 2011)$place, 
-	-filter(balance.merged, year == 2011)$total_jobs)))
+	 filter(balance.merged, year == 2013)$place, 
+	-filter(balance.merged, year == 2013)$total_jobs)))
 
 # Rename this factor for ease of plotting
 levels(balance.merged$place)[25] <- "Uninc. Sonoma Cty."
@@ -176,15 +178,17 @@ balance.merged.lwhw <- filter(balance.merged, variable %in% c("low_wage_jobs", "
 ratio.merged <- rbind(
 	melt(top.25.ratio.2009, id = c("place", "year", "total_jobs", "total_residents")),
 	melt(top.25.ratio.2010, id = c("place", "year", "total_jobs", "total_residents")),
-	melt(top.25.ratio.2011, id = c("place", "year", "total_jobs", "total_residents")))
+	melt(top.25.ratio.2011, id = c("place", "year", "total_jobs", "total_residents")),
+	melt(top.25.ratio.2012, id = c("place", "year", "total_jobs", "total_residents")),
+	melt(top.25.ratio.2013, id = c("place", "year", "total_jobs", "total_residents")))
 
 # Reorder place factor to descend in total jobs in 2011
 # to be used below for plotting
 ratio.merged$place <- gsub(" city, CA", "", ratio.merged$place)
 
 ratio.merged$place <- factor(ratio.merged$place, levels = levels(reorder(
-	 filter(ratio.merged, year == 2011)$place, 
-	-filter(ratio.merged, year == 2011)$total_jobs)))
+	 filter(ratio.merged, year == 2013)$place, 
+	-filter(ratio.merged, year == 2013)$total_jobs)))
 
 # Rename this factor for ease of plotting
 levels(ratio.merged$place)[25] <- "Uninc. Sonoma Cty."
@@ -209,12 +213,12 @@ educ <- ggplot(balance.merged.educ, aes(x = as.factor(year), y = value, color = 
 	scale_color_brewer(palette = "Dark2", 
 		labels = c("Less than high school", "High school", "Some college", "Bachelor's or above")) + 
 	xlab(NULL) + ylab("symmetric job-employed resident balance (1 = balance, 0 = imbalance)") + 
-	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
-		legend.position = "bottom")
+	theme_bw() + theme(plot.title = element_text(face = "bold"), axis.text.x = element_text(angle = 45, hjust = 1), 
+	  legend.title = element_blank(), legend.position = "bottom")
 
 educ + facet_wrap(~ place) + ggtitle("Job-employed resident balance indicators by education level")
 
-ggsave("output/Balance_Education.png", width = 13, height = 15, scale = 0.6)
+ggsave("output_2013/Balance_Education.png", width = 13, height = 15, scale = 0.6)
 
 # Wage level
 wage <- ggplot(balance.merged.wage, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
@@ -222,12 +226,12 @@ wage <- ggplot(balance.merged.wage, aes(x = as.factor(year), y = value, color = 
 	geom_line(aes(group = variable)) + 
 	scale_color_brewer(palette = "Dark2", labels = c("Low-wage", "Mid-wage", "High-wage")) + 
 	xlab(NULL) + ylab("symmetric job-employed resident balance (1 = balance, 0 = imbalance)") + 
-	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
-		legend.position = "bottom")
+	theme_bw() + theme(plot.title = element_text(face = "bold"), axis.text.x = element_text(angle = 45, hjust = 1),
+	  legend.title = element_blank(), legend.position = "bottom")
 
 wage + facet_wrap(~ place) + ggtitle("Job-employed resident balance indicators by wage level")
 
-ggsave("output/Balance_Wage.png", width = 13, height = 15, scale = 0.6)
+ggsave("output_2013/Balance_Wage.png", width = 13, height = 15, scale = 0.6)
 
 # NAICS codes
 naics <- ggplot(balance.merged.naics, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
@@ -236,13 +240,12 @@ naics <- ggplot(balance.merged.naics, aes(x = as.factor(year), y = value, color 
 	scale_color_brewer(palette = "Dark2", 
 		labels = c("Professional, scientific, technical", "Accommodations and food services")) + 
 	xlab(NULL) + ylab("symmetric job-employed resident balance (1 = balance, 0 = imbalance)") + 
-	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
-		legend.position = "bottom")
+	theme_bw() + theme(plot.title = element_text(face = "bold"), axis.text.x = element_text(angle = 45, hjust = 1),
+	  legend.title = element_blank(), legend.position = "bottom")
 
 naics + facet_wrap(~ place) + ggtitle("Job-employed resident balance indicators by NAICS code")
 
-ggsave("output/Balance_NAICS.png", width = 13, height = 15, scale = 0.6)
-
+ggsave("output_2013/Balance_NAICS.png", width = 13, height = 15, scale = 0.6)
 
 # Aggregate low/high wage jobs
 lwhw <- ggplot(balance.merged.lwhw, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
@@ -250,28 +253,27 @@ lwhw <- ggplot(balance.merged.lwhw, aes(x = as.factor(year), y = value, color = 
 	geom_line(aes(group = variable)) + 
 	scale_color_brewer(palette = "Dark2", labels = c("Low-wage NAICS codes", "High-wage NAICS codes")) + 
 	xlab(NULL) + ylab("symmetric job-employed resident balance (1 = balance, 0 = imbalance)") + 
-	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
-		legend.position = "bottom")
+	theme_bw() + theme(plot.title = element_text(face = "bold"), axis.text.x = element_text(angle = 45, hjust = 1),
+	  legend.title = element_blank(), legend.position = "bottom")
 
 lwhw + facet_wrap(~ place) + ggtitle("Job-employed resident balance indicators by\nlow-wage and high-wage NAICS codes")
 
-ggsave("output/Balance_lwhw.png", width = 13, height = 15, scale = 0.6)
-
+ggsave("output_2013/Balance_lwhw.png", width = 13, height = 15, scale = 0.6)
 
 # Plot showing change over time for the RATIO indicator 
-# for the 25 jurisdictions with the greatest numbers of jobs in 2011
+# for the 25 jurisdictions with the greatest numbers of jobs in 2013
 educ <- ggplot(ratio.merged.educ, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
 	# Adjust the aesthetic to correctly plot the line
 	geom_line(aes(group = variable)) + 
 	scale_color_brewer(palette = "Dark2", 
 		labels = c("Less than high school", "High school", "Some college", "Bachelor's or above")) + 
 	xlab(NULL) + ylab("jobs-employed residents ratio") + 
-	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
-		legend.position = "bottom")
+	theme_bw() + theme(plot.title = element_text(face = "bold"), axis.text.x = element_text(angle = 45, hjust = 1),
+	  legend.title = element_blank(), legend.position = "bottom")
 
 educ + facet_wrap(~ place) + ggtitle("Job-employed resident indicators by education level")
 
-ggsave("output/Ratio_JER_Education.png", width = 13, height = 15, scale = 0.6)
+ggsave("output_2013/Ratio_JER_Education.png", width = 13, height = 15, scale = 0.6)
 
 # wage levels
 wage <- ggplot(ratio.merged.wage, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
@@ -280,12 +282,12 @@ wage <- ggplot(ratio.merged.wage, aes(x = as.factor(year), y = value, color = va
 	scale_color_brewer(palette = "Dark2", 
 		labels = c("Low-wage", "Mid-wage", "High-wage")) + 
 	xlab(NULL) + ylab("jobs-employed residents ratio") + 
-	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
-		legend.position = "bottom")
+	theme_bw() + theme(plot.title = element_text(face = "bold"), axis.text.x = element_text(angle = 45, hjust = 1),
+	  legend.title = element_blank(), legend.position = "bottom")
 
 wage + facet_wrap(~ place) + ggtitle("Job-employed resident indicators by wage level")
 
-ggsave("output/Ratio_JER_Wage.png", width = 13, height = 15, scale = 0.6)
+ggsave("output_2013/Ratio_JER_Wage.png", width = 13, height = 15, scale = 0.6)
 
 # NAICS code
 naics <- ggplot(ratio.merged.naics, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
@@ -294,12 +296,12 @@ naics <- ggplot(ratio.merged.naics, aes(x = as.factor(year), y = value, color = 
 	scale_color_brewer(palette = "Dark2", 
 		labels = c("Professional, scientific, technical", "Accommodations and food services")) + 
 	xlab(NULL) + ylab("jobs-employed residents ratio") + 
-	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
-		legend.position = "bottom")
+	theme_bw() + theme(plot.title = element_text(face = "bold"), axis.text.x = element_text(angle = 45, hjust = 1),
+	  legend.title = element_blank(), legend.position = "bottom")
 
 naics + facet_wrap(~ place) + ggtitle("Job-employed resident indicators by NAICS code")
 
-ggsave("output/Ratio_JER_naics.png", width = 13, height = 15, scale = 0.6)
+ggsave("output_2013/Ratio_JER_naics.png", width = 13, height = 15, scale = 0.6)
 
 # Aggregate low/high wage jobs
 lwhw <- ggplot(ratio.merged.lwhw, aes(x = as.factor(year), y = value, color = variable)) + geom_point() + 
@@ -307,12 +309,12 @@ lwhw <- ggplot(ratio.merged.lwhw, aes(x = as.factor(year), y = value, color = va
 	geom_line(aes(group = variable)) + 
 	scale_color_brewer(palette = "Dark2", labels = c("Low-wage NAICS codes", "High-wage NAICS codes")) + 
 	xlab(NULL) + ylab("jobs-employed residents ratio") + 
-	theme_bw() + theme(plot.title = element_text(face = "bold"), legend.title = element_blank(),
-		legend.position = "bottom")
+	theme_bw() + theme(plot.title = element_text(face = "bold"), axis.text.x = element_text(angle = 45, hjust = 1),
+	  legend.title = element_blank(), legend.position = "bottom")
 
 lwhw + facet_wrap(~ place) + ggtitle("Job-employed resident indicators by\nlow-wage and high-wage NAICS codes")
 
-ggsave("output/Ratio_lwhw.png", width = 13, height = 15, scale = 0.6)
+ggsave("output_2013/Ratio_lwhw.png", width = 13, height = 15, scale = 0.6)
 
 # Export combined results ------------------------------------------------------
 
@@ -363,7 +365,7 @@ for(year in years.to.download) {
 	
 }
 
-write.table(outfile, "output/BayArea_LEHD_2009-2011 (Raw values).csv", sep = ",", row.names = FALSE)
+write.table(outfile, "output_2013/BayArea_LEHD_2009-2013 (Raw values).csv", sep = ",", row.names = FALSE)
 
 # Balance and ratio outfiles
 
@@ -398,4 +400,4 @@ for(year in years.to.download) {
 	
 }
 
-write.table(outfile, "output/BayArea_LEHD_2009-2011 (JER Measures).csv", sep = ",", row.names = FALSE)
+write.table(outfile, "output_2013/BayArea_LEHD_2009-2013 (JER Measures).csv", sep = ",", row.names = FALSE)

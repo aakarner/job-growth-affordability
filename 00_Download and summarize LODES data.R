@@ -1,6 +1,6 @@
 # Effect of high-wage job growth on housing demand on the San Francisco Bay Area
 # Analysis using the Longitudinal Employer-Household Dynamics Origin-Destination
-# Employment Statistics (LODES) data 2008-2011 and the American Community Survey
+# Employment Statistics (LODES) data 2008-2013 and the American Community Survey
 #
 # Alex Karner, alex.karner@coa.gatech.edu
 # Chris Benner, cbenner@ucsc.edu
@@ -33,7 +33,6 @@
 # Define which years to download
 
 # For the present analysis, we're interested in all post-recession years
-# Once we have the next update from the census, we'll include more recent years of data
 years.to.download <- c(2008, 2009, 2010, 2011, 2012, 2013)
 
 options(scipen = 999) # Supress scientific notation so we can see census geocodes
@@ -140,7 +139,7 @@ for(year in years.to.download)
 
 # Summarize rac and wac data by jurisdiction
 
-# Merge geographic identifier to each year of LEHD data
+# Merge geographic identifier on county and place into each year of LEHD data
 for(year in years.to.download) { 
 	
 	assign(paste0("wac.", year), merge(eval(parse(text = paste0("wac.", year))), 
@@ -318,6 +317,9 @@ for(year in years.to.download)
 save(list = c(paste0("od.", years.to.download, ".place"), "years.to.download"), 
 	file = "data/BayAreaLEHD_od_FINAL.RData")
 
+# Save entire workspace, for good measure
+# This is about 600 MB
+save.image(file = "data/LEHD_FINAL_all.RData")
 
 # Validation -------------------------------------------------------------------
 # Validate flow data against LEHD on the map website.

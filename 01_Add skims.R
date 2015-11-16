@@ -1,9 +1,9 @@
 # Effect of high-wage job growth on housing demand on the San Francisco Bay Area
 # Analysis using the Longitudinal Employer-Household Dynamics Origin-Destination
-# Employment Statistics (LODES) data 2008-2011 and the American Community Survey
+# Employment Statistics (LODES) data 2008-2013 and the American Community Survey
 #
-# Alex Karner, alex.karner@asu.edu
-# Chris Benner, ccbenner@ucdavis.edu
+# Alex Karner, alex.karner@coa.gatech.edu
+# Chris Benner, cbenner@ucsc.edu
 #
 # Purpose:
 # This script adds distance skims to the LODES OD flow matrices using
