@@ -356,11 +356,10 @@ levels(flows.plot$variable)[24:27] <- c("tier 1", "tier 2", "tier 3", "tier 1 + 
 levels(price.plot$variable)[24:30] <- c("tier 1", "tier 2", "tier 3", "tier 1 + 2", "< 29", "30-54", "> 55")
 levels(vac.plot$variable)[24:27] <- c("tier 1", "tier 2", "tier 3", "tier 1 + 2")
 
-	place %in% c("San Francisco city", "San Jose city", "Oakland city", "Fremont city", "Sunnyvale city", 
-			"Santa Rosa city", "Hayward city", "Mountain View city", "Redwood City city", "Concord city", 
-			"San Leandro city", "Fairfield city", "Vallejo city", "Napa city", "Richmond city", "Vacaville city", 
-			"Union City city", "Antioch city", "Pittsburg city")), 
-
+# 	place %in% c("San Francisco city", "San Jose city", "Oakland city", "Fremont city", "Sunnyvale city", 
+# 			"Santa Rosa city", "Hayward city", "Mountain View city", "Redwood City city", "Concord city", 
+# 			"San Leandro city", "Fairfield city", "Vallejo city", "Napa city", "Richmond city", "Vacaville city", 
+# 			"Union City city", "Antioch city", "Pittsburg city")), 
 
 # Average....
 
@@ -392,7 +391,7 @@ ggplot(filter(price.plot, variable %in% c("s000_gap") &
 	geom_point(size = 4) + theme_bw() + 
 	theme(legend.position = "none", axis.title = element_text(size = 14), axis.text = element_text(size = 12))
 
-ggsave("output/AveragePriceGap.png", width = 8, height = 6, dpi = 300)
+ggsave("output_2013/AveragePriceGap.png", width = 8, height = 6, dpi = 300)
 
 # Vacancy
 vac.plot$place <- factor(vac.plot$place, levels = levels(reorder(vacancy.impacts$place, vacancy.impacts$s000_gap)))
@@ -407,7 +406,7 @@ ggplot(filter(vac.plot, variable %in% c("s000_gap") &
 	ylab("place-of-work jurisdiction") + geom_point(size = 4) + theme_bw() + 
 	theme(legend.position = "none", axis.title = element_text(size = 14), axis.text = element_text(size = 12))
 
-ggsave("output/AverageVacGap.png", width = 8, height = 6, dpi = 300)
+ggsave("output_2013/AverageVacGap.png", width = 8, height = 6, dpi = 300)
 
 
 ## Income category
@@ -443,8 +442,8 @@ ggplot(filter(flows.plot, variable %in% c("tier 1", "tier 2", "tier 3") &
 ggsave("output_2013/Big3_AverageCommuteGap_Income.png", width = 9, height = 6, dpi = 300)
 
 # Prices
-price.plot$name <- factor(price.plot$name, levels = levels(reorder(price.impacts$name, price.impacts$se01_gap)))
-ggplot(filter(price.plot, variable %in% c("tier 1", "tier 2", "tier 3") & 
+price.plot$place <- factor(price.plot$place, levels = levels(reorder(price.impacts$place, price.impacts$se01_gap)))
+ggplot(filter(price.plot, variable %in% c("se01_gap", "se02_gap", "se03_gap") & 
 		place %in% c("San Francisco city", "San Jose city", "Oakland city", "Fremont city", "Sunnyvale city", 
 			"Santa Rosa city", "Hayward city", "Mountain View city", "Redwood City city", "Concord city", 
 			"San Leandro city", "Fairfield city", "Vallejo city", "Napa city", "Richmond city", "Vacaville city", 
@@ -456,12 +455,12 @@ ggplot(filter(price.plot, variable %in% c("tier 1", "tier 2", "tier 3") &
 	theme(legend.position = "bottom", 
 		axis.title = element_text(size = 14), axis.text = element_text(size = 12))
 
-ggsave("output/AverageHousingPriceGap_Income.png", width = 8, height = 6, dpi = 300)
+ggsave("output_2013/AverageHousingPriceGap_Income.png", width = 8, height = 6, dpi = 300)
 
 
 # Vacancy
 vac.plot$place <- factor(vac.plot$place, levels = levels(reorder(vacancy.impacts$place, vacancy.impacts$se01_gap)))
-ggplot(filter(vac.plot, variable %in% c("tier 1", "tier 2", "tier 3") & 
+ggplot(filter(vac.plot, variable %in% c("se01_gap", "se02_gap", "se03_gap") & 
 		place %in% c("San Francisco city", "San Jose city", "Oakland city", "Fremont city", "Sunnyvale city", 
 			"Santa Rosa city", "Hayward city", "Mountain View city", "Redwood City city", "Concord city", 
 			"San Leandro city", "Fairfield city", "Vallejo city", "Napa city", "Richmond city", "Vacaville city", 
@@ -473,8 +472,4 @@ ggplot(filter(vac.plot, variable %in% c("tier 1", "tier 2", "tier 3") &
 	theme(legend.position = "bottom", 
 		axis.title = element_text(size = 14), axis.text = element_text(size = 12))
 
-ggsave("output/AverageVacancyRateGap_Income.png", width = 8, height = 6, dpi = 300)
-
-
-# Age
-ggsave("output/AverageHousingPriceGap_Income.png", width = 8, height = 4, dpi = 300)
+ggsave("output_2013/AverageVacancyRateGap_Income.png", width = 8, height = 6, dpi = 300)
