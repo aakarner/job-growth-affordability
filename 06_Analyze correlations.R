@@ -1,3 +1,24 @@
+# Effect of high-wage job growth on housing demand on the San Francisco Bay Area
+# Analysis using the Longitudinal Employer-Household Dynamics Origin-Destination
+# Employment Statistics (LODES) data 2008-2013 and the American Community Survey
+#
+# Alex Karner, alex.karner@coa.gatech.edu
+# Chris Benner, cbenner@ucsc.edu
+#
+# Purpose:
+# Calculate correlation coefficients between change in jobs and change in housing units.
+#
+# The user must have previously prepared differences in housing numbers using the ACS
+# three-year datasets since they're not presently available from the Census API. 
+#
+# Set your working directory. 
+# The LODES data files will be stored here. 
+
+# Uncomment this line by removing the '#' in front..
+# setwd("C:/My Directory/LEHD")
+# .. in order to set your current working directory.
+# setwd("D:/Dropbox/Work/high-wage job growth")
+
 # Pairwise correlations
 # Some code from: http://www.gettinggeneticsdone.com/2012/08/more-on-exploring-correlations-in-r.html
 

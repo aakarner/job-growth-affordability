@@ -1,9 +1,9 @@
 # Effect of high-wage job growth on housing demand on the San Francisco Bay Area
 # Analysis using the Longitudinal Employer-Household Dynamics Origin-Destination
-# Employment Statistics (LODES) data 2008-2011 and the American Community Survey
+# Employment Statistics (LODES) data 2008-2013 and the American Community Survey
 #
-# Alex Karner, alex.karner@asu.edu
-# Chris Benner, ccbenner@ucdavis.edu
+# Alex Karner, alex.karner@coa.gatech.edu
+# Chris Benner, cbenner@ucsc.edu
 #
 # Purpose:
 # Create and visualize metrics of internal capture and commute distance.
@@ -93,7 +93,7 @@ for(year in years.to.download) {
 load("data/Top25Places.RData")
 places <- gsub(", CA", "", places)
 
-commutes.plot <- rbind(commutes.2011, commutes.2010, commutes.2009, commutes.2008)
+commutes.plot <- rbind(commutes.2013, commutes.2012, commutes.2011, commutes.2010, commutes.2009, commutes.2008)
 commutes.plot <- filter(commutes.plot, w_plc %in% places)
 commutes.plot$w_plc <- gsub(" city", "", commutes.plot$w_plc)
 commutes.plot$w_plc[commutes.plot$w_plc == "Unincorporated Sonoma county"] <- "Uninc. Sonoma County"
@@ -111,7 +111,7 @@ inc <- ggplot(filter(commutes.plot, variable %in% c("SE01", "SE02", "SE03")),
 	
 inc + facet_wrap(~ w_plc)
 
-ggsave("output/Commute_Income.png", width = 14, height = 15, scale = 0.6)
+ggsave("output_2013/Commute_Income.png", width = 14, height = 15, scale = 0.6)
 
 # industry categories
 ind <- ggplot(filter(commutes.plot, variable %in% c("SI01", "SI02", "SI03")), 
@@ -126,7 +126,7 @@ ind <- ggplot(filter(commutes.plot, variable %in% c("SI01", "SI02", "SI03")),
 	
 ind + facet_wrap(~ w_plc)
 
-ggsave("output/Commute_Income.png", width = 14, height = 15, scale = 0.6)
+ggsave("output_2013/Commute_Industry.png", width = 14, height = 15, scale = 0.6)
 
 # Age
 age <- ggplot(filter(commutes.plot, variable %in% c("SA01", "SA02", "SA03")), 
@@ -141,7 +141,7 @@ age <- ggplot(filter(commutes.plot, variable %in% c("SA01", "SA02", "SA03")),
 	
 age + facet_wrap(~ w_plc)
 
-ggsave("output/Commute_age.png", width = 14, height = 15, scale = 0.6)
+ggsave("output_2013/Commute_age.png", width = 14, height = 15, scale = 0.6)
 
 # Internal capture -------------------------------------------------------------
 
@@ -178,7 +178,8 @@ for(year in years.to.download) {
 	rm(internal.cap)
 }
 	
-internal.plot <- rbind(internal.cap.2011, internal.cap.2010, internal.cap.2009, internal.cap.2008)
+internal.plot <- rbind(internal.cap.2013, internal.cap.2012,
+                       internal.cap.2011, internal.cap.2010, internal.cap.2009, internal.cap.2008)
 
 internal.plot <- filter(internal.plot, plc %in% places)
 internal.plot$plc <- gsub(", CA", "", internal.plot$plc)
@@ -199,7 +200,7 @@ inc <- ggplot(filter(internal.plot, variable %in% c("i_SE01", "i_SE02", "i_SE03"
 	
 inc + facet_wrap(~ plc)
 
-ggsave("output/Internal capture_Income.png", width = 14, height = 15, scale = 0.6)
+ggsave("output_2013/Internal capture_Income.png", width = 14, height = 15, scale = 0.6)
 
 # Industry groups
 ind <- ggplot(filter(internal.plot, variable %in% c("i_SI01", "i_SI02", "i_SI03")), 
@@ -214,7 +215,7 @@ ind <- ggplot(filter(internal.plot, variable %in% c("i_SI01", "i_SI02", "i_SI03"
 	
 ind + facet_wrap(~ plc)
 
-ggsave("output/Internal capture_Industry.png", width = 14, height = 15, scale = 0.6)
+ggsave("output_2013/Internal capture_Industry.png", width = 14, height = 15, scale = 0.6)
 
 # Age
 age <- ggplot(filter(internal.plot, variable %in% c("i_SA01", "i_SA02", "i_SA03")), 
@@ -229,4 +230,4 @@ age <- ggplot(filter(internal.plot, variable %in% c("i_SA01", "i_SA02", "i_SA03"
 	
 age + facet_wrap(~ plc)
 
-ggsave("output/Internal capture_age.png", width = 14, height = 15, scale = 0.6)
+ggsave("output_2013/Internal capture_age.png", width = 14, height = 15, scale = 0.6)

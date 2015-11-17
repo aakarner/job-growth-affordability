@@ -1,6 +1,32 @@
+# Effect of high-wage job growth on housing demand on the San Francisco Bay Area
+# Analysis using the Longitudinal Employer-Household Dynamics Origin-Destination
+# Employment Statistics (LODES) data 2008-2013 and the American Community Survey
+#
+# Alex Karner, alex.karner@coa.gatech.edu
+# Chris Benner, cbenner@ucsc.edu
+#
+# Purpose:
+# Assess the commute distance for marginal workers (i.e. workers added
+# in the most recent period) across the Bay Area.
+#
+# The user must have previously prepared differences in housing numbers using the ACS
+# three-year datasets since they're not presently available from the Census API. 
+#
+# Output: 
+# A series of figures illustrating the conditions faced by new workers
+# relative to existing ones.
+
+# Set your working directory. 
+# The LODES data files will be stored here. 
+
+# Uncomment this line by removing the '#' in front..
+# setwd("C:/My Directory/LEHD")
+# .. in order to set your current working directory.
+# setwd("D:/Dropbox/Work/high-wage job growth")
+
+library(ggplot2)
 library(reshape2)
 library(dplyr)
-
 
 setwd("D:/Dropbox/Work/high-wage job growth")
 
@@ -8,30 +34,27 @@ setwd("D:/Dropbox/Work/high-wage job growth")
 load("data/BayAreaLEHD_od_FINAL.RData")
 load("data/MTCandCountySkims_Google.RData")
 
-
 # PROGRAM START
-
 vars <- c("h_plc", "w_cty", "S000", "SA01", "SA02", "SA03", "SE01", "SE02", "SE03", "t1t2", "SI01", "SI02", "SI03")
-cities <- unique(od.2011.place$w_plc)
+cities <- unique(od.2013.place$w_plc)
 
 # Read in housing value and vacancy indicators
 value <- read.table("data/ACS/ACS_5yr_2013-2009_MedianValue&Vacancy.csv", sep = ",", header = TRUE, row.names = NULL,
-	stringsAsFactors = FALSE)
+                    stringsAsFactors = FALSE)
 
 value <- value[value$county == 1 | value$Geo_NAME %in% cities, ]
 
-# Vacancy rates by affordability category
-value.plot <- melt(value, id = c("Geo_NAME", "Geo_QName"))
-
-ggplot(filter(value.plot, variable %in% c("vac_r", "vac_t1", "vac_t2")), aes(x = value, fill = variable)) + 
-	geom_density(alpha = 0.2) + 
-	xlab("vacancy rate") + ylab("density") +
-	scale_fill_brewer(palette = "Set1", labels = c("all rentals", "tier 1 rentals", "tier 2 rentals")) + 
-	scale_x_continuous(limits = c(-0, 0.25)) + 
-	theme_bw() + theme(legend.title = element_blank(), legend.position = "bottom")
-
-ggsave("output/VacRateDensity.png", height = 6, width = 8, dpi = 300)
-
+# # Vacancy rates by affordability category
+# value.plot <- melt(value, id = c("Geo_NAME", "Geo_QName"))
+# 
+# ggplot(filter(value.plot, variable %in% c("vac_r", "vac_t1", "vac_t2")), aes(x = value, fill = variable)) + 
+#   geom_density(alpha = 0.2) + 
+#   xlab("vacancy rate") + ylab("density") +
+#   scale_fill_brewer(palette = "Set1", labels = c("all rentals", "tier 1 rentals", "tier 2 rentals")) + 
+#   scale_x_continuous(limits = c(-0, 0.25)) + 
+#   theme_bw() + theme(legend.title = element_blank(), legend.position = "bottom")
+# 
+# ggsave("output/VacRateDensity.png", height = 6, width = 8, dpi = 300)
 
 vmt.impacts <- data.frame("place" = cities, 
 	"s000_i" = 0, "se01_i" = 0, "se02_i" = 0, "se03_i" = 0, "t1t2_i" = 0, "sa01_i" = 0, "sa02_i" = 0, "sa03_i" = 0,
@@ -63,11 +86,19 @@ for(city in cities) {
 		by = c("h_plc" = "h_plc", "w_cty" = "w_cty"))
 	names(flows)[3:length(vars)] <- paste0(names(flows[3:length(vars)]), "_2010")
 
-	flows[is.na(flows)] <- 0
-
-	flows <- ungroup(flows)
+	flows <- full_join(od.2011.place[od.2011.place$w_plc == city, vars], flows, 
+	  by = c("h_plc" = "h_plc", "w_cty" = "w_cty"))
+	names(flows)[3:length(vars)] <- paste0(names(flows[3:length(vars)]), "_2011")
 	
-	# Average flows for first three-year period
+	flows <- full_join(od.2012.place[od.2012.place$w_plc == city, vars], flows, 
+	 by = c("h_plc" = "h_plc", "w_cty" = "w_cty"))
+	names(flows)[3:length(vars)] <- paste0(names(flows[3:length(vars)]), "_2012")
+	
+	flows <- full_join(od.2013.place[od.2013.place$w_plc == city, vars], flows, 
+		by = c("h_plc" = "h_plc", "w_cty" = "w_cty"))
+	names(flows)[3:length(vars)] <- paste0(names(flows[3:length(vars)]), "_2013")
+
+	# Average flows for the first and second three-year periods
 	flows <- transmute(flows,
 		h_plc = h_plc,
 		w_cty = w_cty,
@@ -81,31 +112,41 @@ for(city in cities) {
 		sa03_0810 = (SA03_2008 + SA03_2009 + SA03_2010) / 3,
 		si01_0810 = (SI01_2008 + SI01_2009 + SI01_2010) / 3,
 		si02_0810 = (SI02_2008 + SI02_2009 + SI02_2010) / 3,
-		si03_0810 = (SI03_2008 + SI03_2009 + SI03_2010) / 3)
-
-	flows <- full_join(od.2011.place[od.2011.place$w_plc == city, vars], flows, 
-		by = c("h_plc" = "h_plc", "w_cty" = "w_cty"))
-	names(flows)[3:length(vars)] <- paste0(names(flows[3:length(vars)]), "_2011")
+		si03_0810 = (SI03_2008 + SI03_2009 + SI03_2010) / 3,
+		
+		s000_1113 = (S000_2011 + S000_2012 + S000_2013) / 3,
+		se01_1113 = (SE01_2011 + SE01_2012 + SE01_2013) / 3,
+		se02_1113 = (SE02_2011 + SE02_2012 + SE02_2013) / 3,
+		se03_1113 = (SE03_2011 + SE03_2012 + SE03_2013) / 3,
+		t1t2_1113 = (t1t2_2011 + t1t2_2012 + t1t2_2013) / 3,
+		sa01_1113 = (SA01_2011 + SA01_2012 + SA01_2013) / 3,
+		sa02_1113 = (SA02_2011 + SA02_2012 + SA02_2013) / 3,
+		sa03_1113 = (SA03_2011 + SA03_2012 + SA03_2013) / 3,
+		si01_1113 = (SI01_2011 + SI01_2012 + SI01_2013) / 3,
+		si02_1113 = (SI02_2011 + SI02_2012 + SI02_2013) / 3,
+		si03_1113 = (SI03_2011 + SI03_2012 + SI03_2013) / 3)
 
 	flows[is.na(flows)] <- 0
 
+	flows <- ungroup(flows)
+	
 	# Eliminate improbable residences in southern california
 	flows <- filter(flows, !h_plc %in% c(6079, 6029, 6071, 6083, 6111, 6037, 6059, 6065, 6073, 6025))
 	# San Luis Obispo, Kern, San Bernardino, Santa Barbara, Ventura, Los Angeles, Orange, Riverside, San Diego, Imperial
 
 	# Only capture positive changes, since we're interested in where workers are growing
 	flows <- mutate(flows, 
-		s000_mgnl = ifelse(S000_2011 - s000_0810 > 0, S000_2011 - s000_0810, NA),
-		se01_mgnl = ifelse(SE01_2011 - se01_0810 > 0, SE01_2011 - se01_0810, NA),
-		se02_mgnl = ifelse(SE02_2011 - se02_0810 > 0, SE02_2011 - se02_0810, NA),
-		se03_mgnl = ifelse(SE03_2011 - se03_0810 > 0, SE03_2011 - se03_0810, NA),
-		t1t2_mgnl = ifelse(t1t2_2011 - t1t2_0810 > 0, t1t2_2011 - t1t2_0810, NA),
-		sa01_mgnl = ifelse(SA01_2011 - sa01_0810 > 0, SA01_2011 - sa01_0810, NA),
-		sa02_mgnl = ifelse(SA02_2011 - sa02_0810 > 0, SA02_2011 - sa02_0810, NA),
-		sa03_mgnl = ifelse(SA03_2011 - sa03_0810 > 0, SA03_2011 - sa03_0810, NA),
-		si01_mgnl = ifelse(SI01_2011 - si01_0810 > 0, SI01_2011 - si01_0810, NA),
-		si02_mgnl = ifelse(SI02_2011 - si02_0810 > 0, SI02_2011 - si02_0810, NA),
-		si03_mgnl = ifelse(SI03_2011 - si03_0810 > 0, SI03_2011 - si03_0810, NA))
+		s000_mgnl = ifelse(s000_1113 - s000_0810 > 0, s000_1113 - s000_0810, NA),
+		se01_mgnl = ifelse(se01_1113 - se01_0810 > 0, se01_1113 - se01_0810, NA),
+		se02_mgnl = ifelse(se02_1113 - se02_0810 > 0, se02_1113 - se02_0810, NA),
+		se03_mgnl = ifelse(se03_1113 - se03_0810 > 0, se03_1113 - se03_0810, NA),
+		t1t2_mgnl = ifelse(t1t2_1113 - t1t2_0810 > 0, t1t2_1113 - t1t2_0810, NA),
+		sa01_mgnl = ifelse(sa01_1113 - sa01_0810 > 0, sa01_1113 - sa01_0810, NA),
+		sa02_mgnl = ifelse(sa02_1113 - sa02_0810 > 0, sa02_1113 - sa02_0810, NA),
+		sa03_mgnl = ifelse(sa03_1113 - sa03_0810 > 0, sa03_1113 - sa03_0810, NA),
+		si01_mgnl = ifelse(si01_1113 - si01_0810 > 0, si01_1113 - si01_0810, NA),
+		si02_mgnl = ifelse(si02_1113 - si02_0810 > 0, si02_1113 - si02_0810, NA),
+		si03_mgnl = ifelse(si03_1113 - si03_0810 > 0, si03_1113 - si03_0810, NA))
 
 # 	flows <- mutate(flows, 
 # 		s000_mgnl = S000_2011 - s000_0810,
@@ -336,7 +377,7 @@ ggplot(filter(flows.plot, variable %in% c("s000_gap") &
 	theme_bw() + 
 	theme(legend.position = "none", axis.title = element_text(size = 14), axis.text = element_text(size = 12))
 
-ggsave("output/AverageCommuteGap.png", width = 8, height = 6, dpi = 300)
+ggsave("output_2013/AverageCommuteGap.png", width = 8, height = 6, dpi = 300)
 
 # Prices - contract rent
 price.plot$place <- factor(price.plot$place, levels = levels(reorder(price.impacts$place, price.impacts$s000_gap)))
@@ -386,7 +427,7 @@ ggplot(filter(flows.plot, variable %in% c("tier 1", "tier 2", "tier 3") &
 	theme(legend.position = "bottom", 
 		axis.title = element_text(size = 14), axis.text = element_text(size = 12))
 
-ggsave("output/AverageCommuteGap_Income.png", width = 8, height = 6, dpi = 300)
+ggsave("output_2013/AverageCommuteGap_Income.png", width = 8, height = 6, dpi = 300)
 
 # Big 3 
 
@@ -399,7 +440,7 @@ ggplot(filter(flows.plot, variable %in% c("tier 1", "tier 2", "tier 3") &
 	theme(legend.position = "bottom", legend.text = element_text(size = 22), legend.title = element_text(size = 22),
 		axis.title = element_text(size = 22), axis.text = element_text(size = 24))
 
-ggsave("output/Big3_AverageCommuteGap_Income.png", width = 9, height = 6, dpi = 300)
+ggsave("output_2013/Big3_AverageCommuteGap_Income.png", width = 9, height = 6, dpi = 300)
 
 # Prices
 price.plot$name <- factor(price.plot$name, levels = levels(reorder(price.impacts$name, price.impacts$se01_gap)))
