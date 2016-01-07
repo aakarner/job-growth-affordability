@@ -27,7 +27,6 @@ library(dplyr)
 # .. in order to set your current working directory.
 # setwd("D:/Dropbox/Work/high-wage job growth")
 
-
 # Place database files in the MonetDB subfolder of 'data'
 dbfolder <- paste0(getwd(), "data/MonetDB")
 db <- dbConnect(MonetDBLite(), dbfolder)
