@@ -15,7 +15,9 @@
 # the Bay Area and county-county skims for the rest of the state.
 
 library(MonetDB.R)
+library(MonetDBLite)
 library(ggmap)
+library(dplyr)
 
 # Set your working directory. 
 # The skim database will be stored here. 
@@ -25,44 +27,10 @@ library(ggmap)
 # .. in order to set your current working directory.
 # setwd("D:/Dropbox/Work/high-wage job growth")
 
-# Create database --------------------------------------------------------------
-# (these commands only need to be executed once)
-# For more information on using MonetDB, see:
-# https://github.com/ajdamico/usgsd/blob/master/MonetDB/monetdb%20installation%20instructions.R
-#
-# ONLY RUN ONCE: create a monetdb executable (.bat) file for the MTC travel data
-# batfile <-
-# 	monetdb.server.setup(
-# 		
-# 		# set the path to the directory where the initialization batch file and all data will be stored
-# 		database.directory = paste0(getwd(), "data/flow data/MonetDB"),
-# 		# must be empty or not exist
-# 		
-# 		# find the main path to the monetdb installation program
-# 		monetdb.program.path = "C:/Program Files/MonetDB/MonetDB5",
-# 		
-# 		# choose a database name
-# 		dbname = "flowdata",
-# 		
-# 		# choose a database port
-# 		# this port should not conflict with other monetdb databases
-# 		# on your local computer. two databases with the same port number
-# 		# cannot be accessed at the same time
-# 		dbport = 57000
-# 	)
 
-# Connect to database
-batfile <- paste0(getwd(), "/data/flow data/MonetDB/flowdata.bat")
-pid <- monetdb.server.start(batfile)
-dbname <- "flowdata" 
-dbport <- 57000
-drv <- dbDriver("MonetDB")
-monet.url <- paste0("monetdb://localhost:", dbport, "/", dbname)
-db <- dbConnect(drv, monet.url, "monetdb", "monetdb")
-
-# Disconnect from database
-dbDisconnect(db)
-monetdb.server.stop(pid)
+# Place database files in the MonetDB subfolder of 'data'
+dbfolder <- paste0(getwd(), "data/MonetDB")
+db <- dbConnect(MonetDBLite(), dbfolder)
 
 # Load county and place OD flow data 
 load("data/BayAreaLEHD_od_FINAL.RData")
@@ -105,14 +73,14 @@ bay.area.od <- cbind(bay.area.od, temp.od)
 dbWriteTable(db, "bay_area_od", bay.area.od)
 
 # Read MTC skims into the database
-monet.read.csv(db, "MTC_2010_skims.csv", "mtc_skims_taz", 1454^2, locked = TRUE)
+monet.read.csv(db, "data/MTC_2010_skims.csv", "mtc_skims_taz", 1454^2)
 
 # MTC has no intrazonal skims. We developed our own estimates assuming the radius of a
 # circle with the area of the census place. We use these distances to measure the distance 
 # of internally-capture commutes. 
 # TODO: Estimate internal commute distance using the actual blockgroup-blockgroup distances
 # combined with the EPA skim database. 
-monet.read.csv(db, "BayAreaInternalCommutes.csv", "mtc_internal_commutes", 220, locked = TRUE)
+monet.read.csv(db, "data/BayAreaInternalCommutes.csv", "mtc_internal_commutes", 220)
 
 dbSendUpdate(db, "ALTER TABLE bay_area_od ADD COLUMN skim double")
 
@@ -182,3 +150,6 @@ for(i in 1:nrow(places.to.skim)) {
 
 # Save the skims
 save(list = c("places.to.skim", "bay.area.od"), file = "data/MTCandCountySkims_Google.RData")
+
+# Disconnect from database
+dbDisconnect(db)
