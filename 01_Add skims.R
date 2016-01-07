@@ -28,7 +28,7 @@ library(dplyr)
 # setwd("D:/Dropbox/Work/high-wage job growth")
 
 # Place database files in the MonetDB subfolder of 'data'
-dbfolder <- paste0(getwd(), "data/MonetDB")
+dbfolder <- paste0(getwd(), "/data/MonetDB")
 db <- dbConnect(MonetDBLite(), dbfolder)
 
 # Load county and place OD flow data 

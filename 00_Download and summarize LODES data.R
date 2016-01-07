@@ -141,7 +141,6 @@ for(year in years.to.download)
 
 # Merge geographic identifier on county and place into each year of LEHD data
 for(year in years.to.download) { 
-	
 	assign(paste0("wac.", year), merge(eval(parse(text = paste0("wac.", year))), 
 		xwalk[, c("tabblk2010", "ctyname", "stplcname")], by.x = "w_geocode", by.y = "tabblk2010"))
 	
@@ -151,7 +150,6 @@ for(year in years.to.download) {
 
 # Add an identifier for unincorporated areas 
 for(year in years.to.download) {
-
 	# Add a new column `placename` containing stplcname if there is one
 	# and identifying the block as falling within an unincorporated area, 
 	# and the county name, if there's not
@@ -167,7 +165,6 @@ for(year in years.to.download) {
 # Create summary tables by jurisdiction by year
 # Keep both place name and county name for ease of filtering below
 for(year in years.to.download) { 
-	
 	assign(paste0("wac.place.", year), ddply(eval(parse(text = paste0("wac.", year))), 
 		.(placename, ctyname), numcolwise(sum)))
 	
@@ -187,7 +184,7 @@ for(year in years.to.download)
 # Save rac and wac data output so that it may be reloaded easily.
 # Keep the rac/wac and od files separate. 
 save(list = c("years.to.download", paste0("rac.place.", years.to.download), 
-	paste0("wac.place.", years.to.download)), file = "data/BayAreaLEHD.RData")
+	paste0("wac.place.", years.to.download)), file = "data/BayAreaLEHD_v2.RData")
 
 # The crosswalk file contains two blockgroups that don't actually exist in 
 # California. I have emailed the Census Bureau about them. They are 60371370001 

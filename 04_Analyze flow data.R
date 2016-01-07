@@ -19,7 +19,6 @@
 options(scipen = 999) # Supress scientific notation so we can see census geocodes
 
 library(plyr); library(dplyr)
-library(MonetDB.R)
 library(R.utils)
 library(ggmap) # To query driving distances
 library(reshape2)

@@ -19,6 +19,12 @@
 # .. in order to set your current working directory.
 # setwd("D:/Dropbox/Work/high-wage job growth")
 
+library(ggplot2)
+library(dplyr)
+
+# This saved file contains the wac and rac data for 2008-2013
+load("data/LEHD_diffs.Rdata")
+
 # Pairwise correlations
 # Some code from: http://www.gettinggeneticsdone.com/2012/08/more-on-exploring-correlations-in-r.html
 
@@ -46,6 +52,10 @@ flattenSquareMatrix <- function(m) {
              p=m[ut])
 }
 
+# Identify the threshold that separates the top 25 from the bottom
+# Order the 2013 wac data frame in  descending order of total jobs
+threshold <- wac.place.2013[order(-wac.place.2013$C000), ]$C000[26]
+
 big.3 <- wac.diff[wac.diff$placename %in% c("San Francisco city, CA", "Oakland city, CA", "San Jose city, CA"), ]
 big.25 <- wac.diff[wac.diff$total_jobs > threshold, ]
 big.23 <- wac.diff[wac.diff$total_jobs > threshold & !wac.diff$placename %in% c("San Francisco city, CA", "Mountain View city, CA"), ]
@@ -59,7 +69,7 @@ cor.data <- others[, c(8:10)]
 cor.data <- big.25[, c(8:10)] 
 
 # Race categories
-cor.data <- wac.diff[, c(3, 31:36)]
+cor.data <- wac.diff[, c(3,31:36)]
 
 # Industry categories
 cor.data <- others[, c(55:56)]
@@ -74,16 +84,16 @@ cors <- cor(cor.data)
 corProb(cor.data)
  
 # "flatten" that table
-write.table(flattenSquareMatrix(cor.prob(cor.data)), "LEHD_Change_Industry_Correlations.csv", sep = ",", 
+write.table(flattenSquareMatrix(corProb(cor.data)), "output_2013/LEHD_Change_Industry_Correlations.csv", sep = ",", 
 	row.names = FALSE)
 
 # Scatterplot: high vs. low wage NAICS codes
 ggplot(wac.diff, aes(x = naics_hi, y = naics_lo, label = placename)) + geom_point() + 
-	geom_text(data = filter(wac.diff, naics_hi > 2500 | naics_hi < -5000)) + 
+	geom_text(data = filter(wac.diff, naics_hi > 3000 | naics_hi < -1000)) +
 	xlab("change in high-wage NAICS jobs") + ylab("change in low-wage NAICS jobs") +
 	theme_bw()
 
-ggsave("output/Scatter_HiLo.svg", width = 8, height = 6)
+ggsave("output_2013/Scatter_HiLoNAICS.svg", width = 8, height = 6)
 
 # Scatterplot: high vs. low wage categories
 ggplot(wac.diff, aes(x = CE02, y = CE03, label = placename)) + geom_point() + 
@@ -91,8 +101,7 @@ ggplot(wac.diff, aes(x = CE02, y = CE03, label = placename)) + geom_point() +
 	xlab("change in tier 1 jobs (< $1,251/month)") + ylab("change in tier 3 jobs (> $3,333/month)") +
 	theme_bw()
 
-ggsave("output/Scatter_HiLo.svg", width = 8, height = 6)
-
+ggsave("output_2013/Scatter_t1t3.svg", width = 8, height = 6)
 
 
 big.25$place <- factor(big.25$place, levels = levels(reorder(as.factor(big.25$place), big.25$naics_lo/big.25$naics_hi)))
@@ -103,7 +112,7 @@ ggplot(filter(big.25, naics_hi > 0 & naics_lo > 0), aes(x = naics_lo / naics_hi,
 	geom_vline(aes(xintercept = 1), col = "#EBC79E") + 
 	theme_bw()
 
-ggsave("output/LoJobsperHi.png", width = 7, height = 5, dpi = 300)
+ggsave("output_2013/LoJobsperHi.png", width = 7, height = 5, dpi = 300)
 
 
 ggplot(big.25, aes(x = naics_hi, y = naics_lo)) + geom_point()

@@ -43,19 +43,20 @@ for(year in years.to.download) {
 }
 
 # Drop the 'createdate' column
-wac.place.2008 <- wac.place.2008[, -c(55)]
-wac.place.2009 <- wac.place.2009[, -c(55)]
-wac.place.2010 <- wac.place.2010[, -c(55)]
-wac.place.2011 <- wac.place.2011[, -c(55)]
-wac.place.2012 <- wac.place.2012[, -c(55)]
-wac.place.2013 <- wac.place.2013[, -c(55)]
+wac.place.2008 <- wac.place.2008[, -55]
+wac.place.2009 <- wac.place.2009[, -55]
+wac.place.2010 <- wac.place.2010[, -55]
+wac.place.2011 <- wac.place.2011[, -55]
+wac.place.2012 <- wac.place.2012[, -55]
+wac.place.2013 <- wac.place.2013[, -55]
 
 # Sereno del Mar CDP, CA is not in the 2011 data. Remove it from the others for consistency.
 wac.place.2013 <- wac.place.2013[!wac.place.2013$placename %in% "Sereno del Mar CDP, CA", ]
 wac.place.2012 <- wac.place.2012[!wac.place.2012$placename %in% "Sereno del Mar CDP, CA", ]
-wac.place.2010 <- wac.place.2011[!wac.place.2011$placename %in% "Sereno del Mar CDP, CA", ]
-wac.place.2009 <- wac.place.2010[!wac.place.2010$placename %in% "Sereno del Mar CDP, CA", ]
-wac.place.2008 <- wac.place.2009[!wac.place.2009$placename %in% "Sereno del Mar CDP, CA", ]
+wac.place.2011 <- wac.place.2011[!wac.place.2011$placename %in% "Sereno del Mar CDP, CA", ]
+wac.place.2010 <- wac.place.2010[!wac.place.2010$placename %in% "Sereno del Mar CDP, CA", ]
+wac.place.2009 <- wac.place.2009[!wac.place.2009$placename %in% "Sereno del Mar CDP, CA", ]
+wac.place.2008 <- wac.place.2008[!wac.place.2008$placename %in% "Sereno del Mar CDP, CA", ]
 
 # Create tables that contain three-year averages for 2008-2010 and 2011-2013 to match the ACS three-year
 # data. 
@@ -102,6 +103,8 @@ acs.housing <- semi_join(acs.housing, wac.diff, by = c("name" = "placename"))
 # Merge housing and jobs data
 jobs.housing <- inner_join(wac.diff, acs.housing, by = c("placename" = "name"))
 
+# Save image for later use
+save.image(file = "data/LEHD_diffs.RData")
 
 # Visualize results ------------------------------------------------------------
 # And color by the statistical significance of the difference (for ACS)
@@ -552,19 +555,6 @@ ggplot(jobs.housing, aes(x = CNS12, y = mw_r_e, size = log(total_jobs), label = 
 
 ggsave("HousingJobs_prof_mwaff.png", height = 8, width = 11, dpi = 500)
 
-# Relationship between high-wage and low-wage job growth
-
-ggplot(wac.diff, aes(x = CNS12, y = CE01, label = placename)) + geom_point() + geom_smooth(method = "lm") +
-	xlab("change in professional jobs") + ylab("change in tier 1 jobs") + 
-	guides(size = FALSE) + 
-	geom_vline(aes(xintercept = 0), color = grey(0.7)) + 
-	geom_hline(aes(yintercept = 0), color = grey(0.7)) + 
-	theme_bw()
-
-
-geom_text(data = subset(jobs.housing, abs(CNS12) > 500 | abs(mw_r_e) > 1500), vjust = -0.7, hjust = 0.8, size = 4, 
-		color = "black") +
-	
 # Jobs-housing fit -------------------------------------------------------------
 	
 # Read in three-year ACS data for 2013-2011 and 2010-2008
@@ -653,25 +643,6 @@ levels(jobs.housing.plot.2010$variable) <- c(
 	"Tier 2 fit (rentals)", "Tier 2 fit (owner-occupied)", "Tier 2 fit (all units)",
 	"Tier 1 + 2 fit (rentals)", "Tier 1 + 2 fit (owner-occupied)", "Tier 1 + 2 fit (all units)",
 	"Overall balance (rentals)", "Overall balance (owner-occupied)", "Overall balance (all units)")
-
-
-jhplot2 <- ggplot(jobs.housing.plot, aes(x = value, y = place_label)) + 
-	ylab(NULL) + geom_point() + 
-	geom_vline(xintercept = 1, color = "#EBC79E") + 
-	xlab("jobs-housing fit or balance ratio (number of jobs divided by number of affordable units in each category)") +
-	ggtitle("Jobs-Housing Fit and Balance measures, 2008-2010 average") +
-	theme_bw()
-
-jhplot2 + facet_wrap(~variable, nrow = 4, ncol = 3)
-
-sumstats <- ddply(jobs.housing.plot, .(variable), summarize, stddev  = sd(value), avg = mean(value))
-sumstats <- melt(sumstats, id = "variable")
-names(sumstats)[1] <- "id"
-
-ggplot(sumstats, aes(x = id, y = value, color = variable)) + 
-	geom_hline(yintercept = 1, color = "black") + 
-	theme_bw() + geom_point()
-
 
 # Change figure
 jobs.housing.plot.2013$year <- 2013
