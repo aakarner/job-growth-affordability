@@ -33,7 +33,7 @@
 # Define which years to download
 
 # For the present analysis, we're interested in all post-recession years
-years.to.download <- c(2008, 2009, 2010, 2011, 2012, 2013)
+years.to.download <- c(2008, 2009, 2010, 2011, 2012, 2013, 2014)
 
 options(scipen = 999) # Supress scientific notation so we can see census geocodes
 
@@ -135,7 +135,7 @@ file.remove(tf)
 for(year in years.to.download)
 	stopifnot(sum(paste0("wac.", year, "$w_geocode") %in% xwalk$tabblk2010) == dim(paste0("wac.", year))[1])
 
-# Each year of the LEHD data for the rac, wac, and crosswalk file are now imported.
+# Each year of the LEHD data for the rac, wac, and the crosswalk file are now imported.
 
 # Summarize rac and wac data by jurisdiction
 
@@ -193,8 +193,8 @@ save(list = c("years.to.download", paste0("rac.place.", years.to.download),
 # incorrect. Further, there are two blockgroups missing from the crosswalk,
 # and the block prefixes match those. To correct, simply re-map the blockgroup 
 # prefix for these blocks
-xwalk$bgrp[xwalk$bgrp == 60371370001] <- substr(xwalk$tabblk2010[xwalk$bgrp == 60371370001], 1, 11)
-xwalk$bgrp[xwalk$bgrp == 60371370002] <- substr(xwalk$tabblk2010[xwalk$bgrp == 60371370002], 1, 11)
+# xwalk$bgrp[xwalk$bgrp == 60371370001] <- substr(xwalk$tabblk2010[xwalk$bgrp == 60371370001], 1, 11)
+# xwalk$bgrp[xwalk$bgrp == 60371370002] <- substr(xwalk$tabblk2010[xwalk$bgrp == 60371370002], 1, 11)
 
 # Check
 # xwalk[xwalk$bgrp == 60371370001, ] # No records left
@@ -308,14 +308,15 @@ for(year in years.to.download) {
 
 # Add in tier 1 + tier 2 job flow
 for(year in years.to.download)
-	assign(paste0("od.", year, ".place"), mutate(eval(parse(text = paste0("od.", year, ".place"))), t1t2 = SE01 + SE02))
+	assign(paste0("od.", year, ".place"), 
+	       mutate(eval(parse(text = paste0("od.", year, ".place"))), t1t2 = SE01 + SE02))
 
 # Save the results to disk
 save(list = c(paste0("od.", years.to.download, ".place"), "years.to.download"), 
 	file = "data/BayAreaLEHD_od_FINAL.RData")
 
 # Save entire workspace, for good measure
-# This is about 600 MB
+# This is about 700 MB
 save.image(file = "data/LEHD_FINAL_all.RData")
 
 # Validation -------------------------------------------------------------------
@@ -326,6 +327,9 @@ save.image(file = "data/LEHD_FINAL_all.RData")
 # that include cross-state movements. 
 # We can validate the internal capture of the state, however.
 
+sum(od.2014$S000) # 15473189
+sum(od.2013$S000) # 15050843
+sum(od.2012$S000) # 14593544
 sum(od.2011$S000) # 14556888 - Correct
 sum(od.2010$S000) # 14363254 - Correct
 sum(od.2009$S000) # 14037387 - Correct

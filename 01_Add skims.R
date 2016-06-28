@@ -18,6 +18,7 @@ library(MonetDB.R)
 library(MonetDBLite)
 library(ggmap)
 library(dplyr)
+library(DBI)
 
 # Set your working directory. 
 # The skim database will be stored here. 
@@ -44,7 +45,7 @@ load("data/BayAreaLEHD_od_FINAL.RData")
 # place-place origin destination matrix by identifying the population-weighted 
 # centroid of each census place, using populations in blocks as the weights, 
 # and associating that point with a TAZ. Place-place skims
-# within the Bay Area can this be thought of as TAZ-TAZ skims. 
+# within the Bay Area can thus be thought of as TAZ-TAZ skims. 
 # 
 # 2. Google Maps queries for origins and destinations outside the Bay Area.
 # These trips use population-weighted *county* centroids at both the origin 
